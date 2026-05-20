@@ -1,0 +1,28 @@
+{
+  "name": "error-handling",
+  "version": "0.2.0",
+  "description": "Two sibling skills for CLI/code error handling: cdc-err (RFC 9457 dual-consumer envelopes for CLI output) and cdc-review (source-code error-handling review across any language with classified findings, diffs, and YAML work plans).",
+  "author": {
+    "name": "zircote",
+    "email": "zircote@zircote.com",
+    "url": "https://github.com/zircote"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cli",
+    "error-handling",
+    "rfc-9457",
+    "problem-details",
+    "dual-consumer",
+    "agent-tooling",
+    "stderr",
+    "exit-codes",
+    "machine-readable-errors",
+    "structured-errors",
+    "code-review",
+    "cdc-err",
+    "cdc-review",
+    "error-propagation",
+    "exception-handling"
+  ]
+}

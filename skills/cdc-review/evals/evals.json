@@ -1,0 +1,232 @@
+{
+  "skill_name": "cdc-review",
+  "source_authority": "multi-source (Rust API guidelines, Go errors design, PEP 3134, Effective Java) + sibling skill cdc-err for CLI envelope",
+  "evals": [
+    {
+      "id": 1,
+      "name": "trigger-positive-rust-review",
+      "category": "trigger-accuracy",
+      "prompt": "Review my error handling in this Rust file:\n\n```rust\npub fn load_config(path: &Path) -> Config {\n    let data = std::fs::read_to_string(path).unwrap_or_default();\n    serde_json::from_str(&data).unwrap()\n}\n```\n\nWhat's wrong with it?",
+      "expectations": [
+        "Skill triggers and produces a classified violation report (must-fix / should-fix labels visible)",
+        "Identifies the unwrap_or_default as a swallow of std::fs::read_to_string errors",
+        "Identifies the unwrap() on serde_json::from_str as a library-purity violation (panics on bad input)",
+        "Recommends returning Result<Config, ConfigError> with typed error variants",
+        "Recommends preserving the cause chain via #[from] or thiserror",
+        "Includes at least one praise finding OR explicitly notes there is nothing yet to praise"
+      ],
+      "deterministic_checks": [
+        {"type": "file_contains", "filename": "answer.md", "value": "must-fix"},
+        {"type": "file_contains", "filename": "answer.md", "value": "unwrap"},
+        {"type": "file_contains", "filename": "answer.md", "value": "Result"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(#\\[from\\]|thiserror|cause chain|source\\(\\))"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(swallow|swallowed|discards|drops the error)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(ConfigError|MyError|typed error)"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "trigger-positive-implicit-python",
+      "category": "trigger-accuracy",
+      "prompt": "Take a look at this Python:\n\n```python\ntry:\n    result = api.call()\nexcept:\n    pass\nreturn result\n```\n\nIs this OK?",
+      "expectations": [
+        "Skill auto-triggers without the user explicitly requesting a review",
+        "Identifies the bare except as a must-fix swallow",
+        "Notes that 'result' is referenced but may be unbound if api.call raised",
+        "References PEP 3134 / cause chain OR recommends 'raise NewError from e' pattern",
+        "Recommends narrowing the except clause to a specific exception type"
+      ],
+      "deterministic_checks": [
+        {"type": "file_contains", "filename": "answer.md", "value": "must-fix"},
+        {"type": "file_contains", "filename": "answer.md", "value": "bare except"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(KeyboardInterrupt|SystemExit|narrow|specific exception)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(unbound|UnboundLocalError|may not be assigned|undefined)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(except [A-Z]\\w*Error|except \\(.+\\)|except IOError)"}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "trigger-negative-cli-envelope",
+      "category": "trigger-accuracy",
+      "prompt": "What fields should my CLI's RFC 9457 problem+json envelope include for a rate-limit error?",
+      "expectations": [
+        "Skill DOES NOT take over the answer — it defers envelope/format questions to cdc-err",
+        "If the skill mentions itself, it does so to explicitly hand off to cdc-err",
+        "The answer focuses on the envelope fields, not on error-handling code patterns like swallowing or cause chains"
+      ],
+      "deterministic_checks": [
+        {"type": "file_contains", "filename": "answer.md", "value": "cdc-err"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "must-fix"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "swallow"}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "trigger-negative-style",
+      "category": "trigger-accuracy",
+      "prompt": "Review this Go function for code style and naming:\n\n```go\nfunc do_thing(X int) int { return X * 2 }\n```",
+      "expectations": [
+        "Skill DOES NOT trigger — there is no error handling code in scope",
+        "The response addresses naming/style (Go convention is camelCase, capitalized exports) and does not invoke the error-handling review checklist",
+        "No classified-finding output (no [must-fix]/[should-fix] tokens) since the skill did not activate"
+      ],
+      "deterministic_checks": [
+        {"type": "file_not_contains", "filename": "answer.md", "value": "[must-fix]"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "checklist.md"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "swallow"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "violation-detection-swallowed-go",
+      "category": "review",
+      "prompt": "Review:\n\n```go\nfunc loadUser(id string) *User {\n    u, err := db.Get(id)\n    if err != nil {\n        return nil\n    }\n    return u\n}\n```",
+      "expectations": [
+        "Flags 'if err != nil { return nil }' as a must-fix swallow",
+        "Notes that the caller cannot distinguish 'user not found' from 'DB unreachable'",
+        "Recommends returning (*User, error) and propagating the wrapped error with %w",
+        "Recommends using errors.Is(err, sql.ErrNoRows) or similar to discriminate at the boundary"
+      ],
+      "deterministic_checks": [
+        {"type": "file_contains", "filename": "answer.md", "value": "must-fix"},
+        {"type": "file_contains", "filename": "answer.md", "value": "%w"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(errors\\.Is|errors\\.As|ErrNoRows|discriminate|distinguish)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(swallow|return nil|silently)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(\\(\\*User, error\\)|return.*user.*err|return u, err|return nil, err)"}
+      ]
+    },
+    {
+      "id": 6,
+      "name": "violation-detection-lost-cause-python",
+      "category": "review",
+      "prompt": "Review:\n\n```python\ndef parse_input(s: str) -> int:\n    try:\n        return int(s)\n    except ValueError:\n        raise MyAppError('bad input')\n```",
+      "expectations": [
+        "Identifies the lost cause chain — 'raise MyAppError(...)' inside except without 'from e'",
+        "Cites PEP 3134 or names the chain via __cause__ / __context__",
+        "Recommends 'raise MyAppError(\"bad input\") from e' as the fix",
+        "Classifies as must-fix (lost diagnostic info) or should-fix (still has __context__ implicit chain) and explains the choice"
+      ],
+      "deterministic_checks": [
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(from e|raise .* from |__cause__|PEP 3134)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(must-fix|should-fix)"},
+        {"type": "file_contains", "filename": "answer.md", "value": "cause"}
+      ]
+    },
+    {
+      "id": 7,
+      "name": "violation-detection-library-panic-rust",
+      "category": "review",
+      "prompt": "Review src/lib.rs:\n\n```rust\npub fn must_parse(s: &str) -> Config {\n    serde_json::from_str(s).expect(\"config must parse\")\n}\n```\n\nThis is in a library crate, not a binary.",
+      "expectations": [
+        "Flags as must-fix: library code must not panic / expect / unwrap",
+        "Notes that callers — including async runtimes, tests, supervisors — cannot recover from a library panic",
+        "Recommends returning Result<Config, ConfigError> with #[from] serde_json::Error",
+        "References the rule against library-level abort (panic/expect/unwrap in library code)"
+      ],
+      "deterministic_checks": [
+        {"type": "file_contains", "filename": "answer.md", "value": "must-fix"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(library|crate|lib\\.rs)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(panic|expect|unwrap)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(Result|#\\[from\\]|thiserror)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(must not|never|cannot)"}
+      ]
+    },
+    {
+      "id": 8,
+      "name": "refactor-diff-rust",
+      "category": "refactor",
+      "prompt": "Fix this Rust function. Show the before/after diff:\n\n```rust\npub fn read_all(path: &Path) -> Vec<u8> {\n    std::fs::read(path).unwrap_or(Vec::new())\n}\n```",
+      "expectations": [
+        "Produces a before/after diff (with '-' and '+' lines, fenced as a diff or rust block)",
+        "Changes the return type to io::Result<Vec<u8>> or Result<Vec<u8>, io::Error>",
+        "Removes the unwrap_or that was swallowing the I/O error",
+        "Uses '?' or direct return of the std::fs::read result (no manual error mapping needed)",
+        "Notes the call sites must be updated to handle the Result"
+      ],
+      "deterministic_checks": [
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(```diff|^-\\s+pub fn|^\\+\\s+pub fn)", "flags": "m"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(io::Result|Result<Vec<u8>, io::Error>)"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "unwrap_or(Vec::new())"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(call site|caller|propagat)"}
+      ]
+    },
+    {
+      "id": 9,
+      "name": "refactor-diff-python-chaining",
+      "category": "refactor",
+      "prompt": "Fix this Python and show the diff:\n\n```python\ndef parse_config(s: str) -> dict:\n    try:\n        return json.loads(s)\n    except json.JSONDecodeError:\n        raise ConfigError('invalid config')\n```",
+      "expectations": [
+        "Produces a before/after diff (with '-' and '+' lines)",
+        "Changes the raise to 'raise ConfigError(\"...\") from e' (or equivalent chain preservation)",
+        "Optionally improves the message to include context from the underlying error (e.g. position, char)",
+        "Notes that the chain is now traversable via __cause__"
+      ],
+      "deterministic_checks": [
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(```diff|^-\\s+raise|^\\+\\s+raise)", "flags": "m"},
+        {"type": "file_contains", "filename": "answer.md", "value": "from e"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(chain|__cause__|PEP 3134|preserve)"}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "workplan-large-refactor",
+      "category": "workplan",
+      "prompt": "I have 7 error-handling issues across 4 files in my Rust crate: panics in lib.rs:42, lib.rs:118; swallowed I/O in io/reader.rs:42 and io/writer.rs:80; lost cause chains in api/errors.rs:30 and api/errors.rs:55; and a log-and-rethrow pattern across handler.rs. Produce a work plan.",
+      "expectations": [
+        "Triggers Work-Plan mode (>5 findings, >3 files)",
+        "Produces YAML output with milestones, findings array, and per-finding fields (id, title, severity, files, problem, expected, acceptance, effort, dependencies, labels, priority)",
+        "Groups findings into 2+ milestones (library boundary vs handler layer is a natural split)",
+        "Assigns P0 to must-fix (panics, swallows), P1 to should-fix (log-and-rethrow)",
+        "States that the YAML is the deliverable, does NOT create issues directly, and tells the user to feed the YAML to whatever issue-creation flow their project uses"
+      ],
+      "deterministic_checks": [
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(```yaml|```yml|milestones:|findings:)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(EH-001|EH-1|id: 1)"},
+        {"type": "file_contains", "filename": "answer.md", "value": "P0"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(deliverable|hand off|hand it off|does not create issues|out of scope)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(acceptance:|acceptance criteria)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(milestone:|milestones:)"}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "severity-classification",
+      "category": "classification",
+      "prompt": "Classify each of these by severity (must-fix / should-fix / nit / question / praise) and justify briefly:\n\n1. A library function calls panic!() on a poisoned mutex.\n2. An error message in a CLI prints the user's home directory path verbatim.\n3. A Go function returns 'errors.New(\"oops\")' instead of a sentinel error.\n4. A Python except block uses 'except Exception' at the top-level Flask handler.\n5. A Rust function preserves cause chains consistently with #[from] across 4 wrap sites.",
+      "expectations": [
+        "Item 1 (library panic) classified must-fix",
+        "Item 2 (path leakage) classified must-fix (information leakage section)",
+        "Item 3 (errors.New string) classified should-fix or nit, with rationale (inline vs promoted sentinel)",
+        "Item 4 (broad except at boundary) classified should-fix or noted as conditionally acceptable at a top-level boundary",
+        "Item 5 (consistent cause chain) classified praise",
+        "Each classification has a one-line justification, not just a label"
+      ],
+      "deterministic_checks": [
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(must-fix|MUST-FIX)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(should-fix|SHOULD-FIX)"},
+        {"type": "file_contains", "filename": "answer.md", "value": "praise"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(library|panic)"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(leak|leakage|home directory)"}
+      ]
+    },
+    {
+      "id": 12,
+      "name": "boundary-deference-to-cdc-err",
+      "category": "boundary",
+      "prompt": "I'm reviewing my Cobra CLI's error handling. The error propagation looks fine, but I'm not sure my `main()` is emitting the right format for an LLM agent that calls my tool. Can you check both?",
+      "expectations": [
+        "Reviews the propagation/handling code per the cdc-review checklist",
+        "Explicitly defers the OUTPUT FORMAT / envelope question to sibling skill cdc-err",
+        "Names cdc-err by name with a brief explanation of why that's the right skill for envelope work",
+        "Does NOT attempt to specify the RFC 9457 envelope fields, applicability markers, or dual-renderer mechanics itself"
+      ],
+      "deterministic_checks": [
+        {"type": "file_contains", "filename": "answer.md", "value": "cdc-err"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(defer|hand off|sibling skill)"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "applicability marker"},
+        {"type": "file_not_contains", "filename": "answer.md", "value": "machine_applicable"},
+        {"type": "regex_match", "filename": "answer.md", "pattern": "(propagat|wrap|cause chain|swallow|cleanup)"}
+      ]
+    }
+  ]
+}

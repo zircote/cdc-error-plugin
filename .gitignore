@@ -1,0 +1,8 @@
+*-workspace/
+*-autoresearch/
+*-dashboard.html
+__pycache__/
+*.pyc
+.DS_Store
+.claude/
+.creep/

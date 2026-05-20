@@ -1,0 +1,578 @@
+{
+  "skill_name": "cdc-err",
+  "source_url": "https://zircote.com/blog/2026/04/cli-error-messages-are-a-dual-consumer-problem/",
+  "evals": [
+    {
+      "id": 1,
+      "name": "trigger-positive-explicit",
+      "category": "trigger-accuracy",
+      "prompt": "I'm building a Rust CLI and the error messages are just println! lines on stderr. I want them to be parseable by the agent that runs my tool. What should I do?",
+      "expected_output": "Skill triggers. Output proposes RFC 9457 application/problem+json envelope with type/title/status/detail/instance plus the three mandatory extensions (retry_after, suggested_fix, code_actions[]), recommends miette + thiserror with JSONReportHandler, explains applicability markers on suggested_fix, and explains TTY/--format selection.",
+      "expectations": [
+        "Mentions RFC 9457 or application/problem+json as the envelope standard",
+        "Names all three mandatory extensions: retry_after, suggested_fix, and code_actions",
+        "Explains applicability markers (machine_applicable, maybe_incorrect, has_placeholders, or unspecified) on suggested_fix or code_actions",
+        "Recommends dual rendering selected by --format flag or TTY detection, not one or the other in isolation",
+        "Recommends miette with its dual handlers (JSONReportHandler and GraphicalReportHandler) for the Rust idiom"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "application/problem+json",
+          "description": "answer.md contains application/problem+json media type"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "retry_after",
+          "description": "answer.md mentions retry_after extension"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "suggested_fix",
+          "description": "answer.md mentions suggested_fix extension"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md mentions code_actions extension"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "machine_applicable|maybe_incorrect|has_placeholders|unspecified",
+          "description": "answer.md names at least one applicability marker token"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "isatty|IsTerminal|--format",
+          "description": "answer.md references TTY detection or --format flag for renderer selection"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "miette",
+          "description": "answer.md recommends miette for the Rust idiom"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "trigger-positive-implicit",
+      "category": "trigger-accuracy",
+      "prompt": "My Python click tool dumps a 200-line traceback to stderr when the API rate-limits us. Claude keeps giving up instead of retrying. How do I fix this?",
+      "expected_output": "Skill triggers without the user naming RFC 9457. Output diagnoses the missing retry_after directive and the token cost of the traceback, proposes the structured envelope with retry_after, suggested_fix with an applicability marker, and gives a Rich-based dual renderer.",
+      "expectations": [
+        "Identifies missing retry_after as the specific reason the agent abandons instead of retrying",
+        "Explains the token cost or size problem with verbose tracebacks, citing the post's ~75% reduction or tool_result framing",
+        "Provides a Python code example using Rich for the human-rendered path",
+        "Preserves human rendering alongside JSON — dual output, not replacement"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "retry_after",
+          "description": "answer.md identifies retry_after as the missing directive"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "token|1,600|tool_result|tool_floor",
+          "description": "answer.md quantifies or names the token cost of verbose tracebacks"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "from rich|rich\\.console|Rich",
+          "description": "answer.md references the Rich library for Python rendering"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "abandon|give up|gives up",
+          "description": "answer.md explains the agent-abandonment failure mode"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "trigger-negative-near-miss-server-errors",
+      "category": "trigger-accuracy",
+      "prompt": "We're returning 500 errors from our REST API and our React frontend doesn't know what to display to users. Should we return a JSON object with the error message and a localized title?",
+      "expected_output": "Skill does NOT trigger — this is a web API + frontend UX question, not a CLI error output question. The dual consumers are 'human at terminal' and 'LLM agent', not 'frontend code' and 'end user'. RFC 9457 may be mentioned as the correct REST standard, but CLI-specific terminology (retry_after, code_actions, exit_code, isatty) must not appear as if the skill is in scope.",
+      "expectations": [
+        "Skill does not present itself as active (no CLI dual-consumer framing applied to the user's REST/React problem)",
+        "Answer addresses REST API and frontend UX concerns, not CLI stderr / exit_code / TTY rendering",
+        "If RFC 9457 appears it is presented as the right answer for REST APIs, not as a CLI prescription — incidental mention is acceptable"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_not_contains",
+          "file": "answer.md",
+          "literal": "retry_after",
+          "description": "answer.md does not use retry_after (CLI-specific extension) in the context of REST/React advice"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md does not apply code_actions[] (CLI agent extension) to the REST/React problem"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "REST|HTTP|frontend|React|browser|user interface|UI",
+          "description": "answer.md addresses the REST / frontend domain"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "trigger-negative-logging",
+      "category": "trigger-accuracy",
+      "prompt": "How should I structure my application logs so they're easy to grep through later? Currently using log/slog in Go.",
+      "expected_output": "Skill does NOT trigger. Application logging is not CLI error output for a dual human+agent consumer. The post explicitly puts telemetry/logging out of scope.",
+      "expectations": [
+        "Answer addresses application logging (structured fields, JSON handler, grep/jq patterns) rather than CLI error envelope design",
+        "Skill does not present itself or apply CLI dual-consumer framing to a logging question"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_not_contains",
+          "file": "answer.md",
+          "literal": "application/problem+json",
+          "description": "answer.md does not apply the RFC 9457 CLI envelope to an application logging question"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "answer.md",
+          "literal": "retry_after",
+          "description": "answer.md does not mention retry_after in the context of application logging"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md does not apply code_actions[] to application logging"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "slog|log|logging|handler|JSON handler|structured",
+          "description": "answer.md addresses Go slog / structured logging concerns"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "violation-detection-missing-retry",
+      "category": "review",
+      "prompt": "Here is the error my Go CLI emits when it hits a rate limit:\n\nerror: rate limit exceeded, please try again later\nexit status 1\n\nReview this for me.",
+      "expected_output": "Identifies (1) no retry_after directive, (2) no structured envelope, (3) single-format pretty-only output, (4) no suggested_fix, (5) no docs_url. Cites the post's specific claim that without retry_after agents abandon recoverable work. Proposes the canonical rate-limit envelope with status 429, machine_applicable on suggested_fix, and exit_code 2.",
+      "expectations": [
+        "Flags missing retry_after as the primary violation for a rate-limit error",
+        "Flags single-format (pretty-only) output and the absence of a JSON / structured path",
+        "Cites the agent-abandonment failure mode from the post explicitly",
+        "Produces a corrected envelope that includes status 429 and exit_code 2",
+        "Applies an applicability marker (machine_applicable) on the suggested_fix in the corrected envelope"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "retry_after",
+          "description": "answer.md flags missing retry_after"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "abandon|give up|gives up",
+          "description": "answer.md cites the agent-abandonment failure mode"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"status\":\\s*429|status: 429|status=429",
+          "description": "answer.md corrected envelope contains status 429"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "machine_applicable|maybe_incorrect|has_placeholders|unspecified",
+          "description": "answer.md includes an applicability marker on the corrected suggested_fix"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "suggested_fix",
+          "description": "answer.md corrected envelope includes suggested_fix"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "violation-detection-ambiguous-fix",
+      "category": "review",
+      "prompt": "I'm emitting RFC 9457 from my CLI now. Here's the JSON for a missing-library error:\n{\n  \"type\": \"https://docs.example.com/cli/errors/missing-lib\",\n  \"title\": \"Missing library\",\n  \"status\": 471,\n  \"detail\": \"could not find -lssl\",\n  \"instance\": \"urn:build:abc\",\n  \"suggested_fix\": \"Install libssl-dev or openssl-devel\"\n}\nIs anything missing?",
+      "expected_output": "Flags (1) no applicability marker on suggested_fix (without it agents will apply plausible-looking but wrong fixes), (2) no code_actions[], (3) no docs_url, (4) invalid HTTP status 471 (not a registered code), (5) no retry_after (acceptable for non-transient errors but worth noting). Recommends has_placeholders or maybe_incorrect for the platform-conditional fix.",
+      "expectations": [
+        "Flags the missing applicability marker on suggested_fix and explains the wrong-fix failure mode",
+        "Recommends has_placeholders or maybe_incorrect for the platform-dependent install instruction",
+        "Flags missing code_actions[] as a required extension beyond the free-text suggested_fix",
+        "Flags status 471 as invalid (not a registered HTTP status code)"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "machine_applicable|maybe_incorrect|has_placeholders|unspecified",
+          "description": "answer.md names an applicability marker"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md flags missing code_actions[] extension"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "has_placeholders|maybe_incorrect",
+          "description": "answer.md recommends has_placeholders or maybe_incorrect for the platform-conditional fix"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "471|invalid.*status|not.*registered|unregistered",
+          "description": "answer.md flags status 471 as an invalid HTTP status code"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "plausible|wrong fix|wrong fixes|incorrect fix|incorrect fixes",
+          "description": "answer.md cites the wrong-fix agent failure mode"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "generation-go-cobra",
+      "category": "generation",
+      "prompt": "Add a compliant error to my Cobra CLI for the case where the user supplies a config file that doesn't exist. Show me the Go code and the resulting JSON envelope.",
+      "expected_output": "Produces (1) a Go Problem struct with the five RFC 9457 standard fields, retry_after omitted (not transient), suggested_fix populated with an applicability marker; (2) code_actions[] with at least one entry; (3) format selection by --format flag or isatty; (4) the resulting JSON with application/problem+json shape; (5) a versioned type URI; (6) exit_code set to a non-zero value.",
+      "expectations": [
+        "Go struct or JSON envelope contains all five RFC 9457 standard fields (type, title, status, detail, instance)",
+        "code_actions[] array is present in the JSON envelope with at least one entry",
+        "An applicability marker appears on suggested_fix or on a code_action entry",
+        "Type URI is versioned or points to a docs endpoint with a changelog path",
+        "Format selection uses --format flag or isatty / IsTerminal — not hardcoded"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"type\"\\s*:",
+          "description": "answer.md JSON envelope contains type field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"title\"\\s*:",
+          "description": "answer.md JSON envelope contains title field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"status\"\\s*:",
+          "description": "answer.md JSON envelope contains status field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"detail\"\\s*:",
+          "description": "answer.md JSON envelope contains detail field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"instance\"\\s*:",
+          "description": "answer.md JSON envelope contains instance field"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md includes code_actions[] in the generated output"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "suggested_fix",
+          "description": "answer.md includes suggested_fix in the generated output"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "machine_applicable|maybe_incorrect|has_placeholders|unspecified",
+          "description": "answer.md includes an applicability marker on suggested_fix or a code_action"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "isatty|IsTerminal|--format",
+          "description": "answer.md uses isatty/IsTerminal or --format for renderer selection"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "generation-python-rich",
+      "category": "generation",
+      "prompt": "Write a small Python helper using Rich that emits both the pretty-rendered error and the application/problem+json envelope for a rate-limit error. The retry window is 30 seconds.",
+      "expected_output": "Produces Python that uses Rich for the pretty path and json.dumps (or equivalent) for the JSON path, selects between them on --format or sys.stderr.isatty(), includes retry_after=30, status=429, exit_code non-zero, suggested_fix with an applicability marker, and code_actions[] with at least one entry.",
+      "expectations": [
+        "Uses Rich library for the human-rendered path",
+        "Format selection uses sys.stderr.isatty() or a --format argument — not hardcoded",
+        "retry_after equals 30 (the delta-seconds from the prompt)",
+        "status is 429",
+        "code_actions[] is present in the generated envelope",
+        "An applicability marker appears on suggested_fix or a code_action entry"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "from rich|rich\\.console|import rich",
+          "description": "answer.md imports or uses the Rich library"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "isatty|--format",
+          "description": "answer.md uses TTY detection or --format for renderer selection"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "retry_after.*30|30.*retry_after",
+          "description": "answer.md sets retry_after to 30 seconds"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "status.*429|429.*status|\"status\":\\s*429",
+          "description": "answer.md sets status to 429"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md includes code_actions[] in the generated Python envelope"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "machine_applicable|maybe_incorrect|has_placeholders|unspecified",
+          "description": "answer.md includes an applicability marker"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "suggested_fix",
+          "description": "answer.md includes suggested_fix in the generated envelope"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "structural-fidelity-out-of-scope",
+      "category": "fidelity",
+      "prompt": "What's the complete mapping from HTTP status codes to POSIX exit codes I should use in my CLI's error envelope?",
+      "expected_output": "Skill triggers but answers honestly: the blog post does NOT prescribe a complete table — it only gives the rate-limit example (status 429 → exit_code 2). The skill marks this as out of scope rather than inventing a mapping.",
+      "expectations": [
+        "Explicitly states the post does not prescribe a complete HTTP-to-exit-code table and marks this as out of scope",
+        "Does not invent a fabricated mapping table covering multiple status codes",
+        "Quotes or cites the one concrete example from the post: status 429 maps to exit_code 2"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "out of scope|does not prescribe|post is silent|post does not|not defined",
+          "description": "answer.md explicitly marks a complete exit-code table as out of scope"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "429.*2|2.*429",
+          "description": "answer.md cites the single canonical example: status 429 maps to exit_code 2"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "structural-fidelity-versioning",
+      "category": "fidelity",
+      "prompt": "I'm about to ship my CLI with RFC 9457 error envelopes. Anything I should commit to before release so I don't paint myself into a corner?",
+      "expected_output": "Names the stable-type-URI / versioning requirement from the post: either embed the version in the URI or track a changelog at the documentation endpoint. Also names the three mandatory extensions and the dual-renderer requirement so they don't become breaking changes later.",
+      "expectations": [
+        "Calls out the stable type URI policy — either version the URI or maintain a changelog at the docs endpoint",
+        "Names dual rendering (--format or TTY detection) as a release commitment",
+        "Names all three mandatory extensions: retry_after, suggested_fix, code_actions"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "stable|versioned?|changelog|breaking change",
+          "description": "answer.md addresses stable type URI or versioning policy"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "isatty|--format|dual render|TTY",
+          "description": "answer.md names dual rendering as a release commitment"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "retry_after",
+          "description": "answer.md names retry_after as a mandatory extension"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "suggested_fix",
+          "description": "answer.md names suggested_fix as a mandatory extension"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md names code_actions as a mandatory extension"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "generation-code-actions-applicability",
+      "category": "generation",
+      "prompt": "My Rust CLI fails when the user's config has an unknown key. Generate a complete RFC 9457 envelope for this error — I want agents to be able to auto-fix the config. Include code_actions[] with at least two alternatives: one that removes the unknown key, and one that renames it to the closest valid key.",
+      "expected_output": "Produces a JSON envelope with: all five standard RFC 9457 fields; code_actions[] with at least two entries (delete-key action and rename-key action); applicability markers on each code_action (machine_applicable for delete, maybe_incorrect or has_placeholders for rename); suggested_fix with an applicability marker; a versioned type URI; docs_url field pointing to documentation.",
+      "expectations": [
+        "code_actions[] array contains at least two entries — one for deleting the key, one for renaming/replacing it",
+        "Each code_action entry carries an applicability marker distinguishing the safe action from the uncertain one",
+        "suggested_fix is present and carries an applicability marker",
+        "docs_url field is present pointing to documentation for the error type",
+        "The type URI is versioned (contains /v1/ or similar segment) or is at a stable docs endpoint"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "code_actions",
+          "description": "answer.md includes code_actions array"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "machine_applicable|maybe_incorrect|has_placeholders|unspecified",
+          "description": "answer.md includes at least one applicability marker on a code_action or suggested_fix"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "suggested_fix",
+          "description": "answer.md includes suggested_fix"
+        },
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "docs_url",
+          "description": "answer.md includes docs_url field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"type\"\\s*:",
+          "description": "answer.md JSON envelope contains type field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"title\"\\s*:",
+          "description": "answer.md JSON envelope contains title field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"status\"\\s*:",
+          "description": "answer.md JSON envelope contains status field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"detail\"\\s*:",
+          "description": "answer.md JSON envelope contains detail field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "\"instance\"\\s*:",
+          "description": "answer.md JSON envelope contains instance field"
+        }
+      ],
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "fidelity-docs-url-and-stable-uri",
+      "category": "fidelity",
+      "prompt": "The post mentions a docs_url field and a stable type URI policy. What exactly are the rules, and how do they interact? Show me a correct and an incorrect example of a type URI.",
+      "expected_output": "Accurately describes the stable-type-URI policy from the post: type URIs must not change after release — either embed the version (e.g. /v1/ in the path) or maintain a changelog at the documentation endpoint. Explains docs_url as the pointer to human-readable documentation for the specific error type. Provides at least one correct example (versioned URI) and one incorrect example (volatile URI).",
+      "expectations": [
+        "Correctly distinguishes docs_url (human-readable error documentation) from the type URI (machine-stable identifier)",
+        "States the stable URI rule: either version the URI path or maintain a docs changelog — changing a type URI after release is a breaking change for agents",
+        "Provides a concrete correct example of a versioned type URI (e.g. containing /v1/ or an immutable path)",
+        "Provides a concrete incorrect example that would violate the stable URI policy (e.g. a path that changes on rename/re-org)",
+        "Honestly marks any aspect of the policy the post does not specify as out of scope or implementation-defined"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "answer.md",
+          "literal": "docs_url",
+          "description": "answer.md explains docs_url field"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "stable|breaking change|immutable|versioned?",
+          "description": "answer.md explains the stable URI policy"
+        },
+        {
+          "type": "regex_match",
+          "file": "answer.md",
+          "pattern": "/v1/|/v2/|version",
+          "description": "answer.md shows or describes a versioned URI"
+        }
+      ],
+      "files": []
+    }
+  ]
+}
