@@ -1,11 +1,16 @@
+---
+diataxis_type: explanation
+---
+
 # error-handling
 
-A Claude Code plugin with two sibling skills for the full error-handling lifecycle:
+A Claude Code plugin with three sibling skills covering the full error-handling lifecycle — producer, propagation, and consumer:
 
-- **`cdc-err`** — designs, reviews, or refactors CLI error *output* using the [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) envelope and the dual-consumer pattern from [*"CLI Error Messages Are a Dual-Consumer Problem"*](https://zircote.com/blog/2026/04/cli-error-messages-are-a-dual-consumer-problem/).
-- **`cdc-review`** — reviews source-code error-handling quality (propagation, swallowing, cause-chain preservation, panic discipline, resource cleanup) across any language and any context, with classified findings, refactor diffs, and YAML work plans for large efforts.
+- **`cdc-err`** *(producer)* — designs, reviews, or refactors CLI error *output* using the [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) envelope and the dual-consumer pattern from [*"CLI Error Messages Are a Dual-Consumer Problem"*](https://zircote.com/blog/2026/04/cli-error-messages-are-a-dual-consumer-problem/).
+- **`cdc-review`** *(propagation)* — reviews source-code error-handling quality (propagation, swallowing, cause-chain preservation, panic discipline, resource cleanup) across any language and any context, with classified findings, refactor diffs, and YAML work plans for large efforts.
+- **`cdc-handle`** *(consumer)* — teaches an LLM agent how to interpret and act on a `cdc-err`-shaped envelope when it lands in a `tool_result`: parse, decide (retry / apply-fix / handback / abort), and emit an executable action plan gated on applicability markers.
 
-The skills are designed to cooperate: `cdc-review` defers all envelope/format questions to `cdc-err`, and `cdc-err` defers all code-propagation questions to `cdc-review`. Either skill will name and hand off to the other when the work crosses the boundary.
+The skills are designed to cooperate. Each declines cleanly outside its lane and hands off to the right sibling: `cdc-err` defers code questions to `cdc-review`; `cdc-review` defers envelope questions to `cdc-err`; `cdc-handle` defers producer questions to `cdc-err` and propagation questions to `cdc-review`.
 
 ## The problem this solves
 
@@ -19,9 +24,9 @@ Your CLI now has two audiences:
 
 Most CLIs do (1) well and (2) badly. A 5KB traceback in a `tool_result` is ~1,600 tokens; a rate-limit error without `retry_after` makes Claude abandon the task entirely; an unmarked "suggested fix" gets applied verbatim even when it's wrong for your platform.
 
-And the surface beneath the CLI — your library code, your handlers, your retry loops — often has its own pile of error-handling debt: swallowed exceptions, `unwrap()` in library code, lost cause chains, log-and-rethrow patterns producing duplicate operator alerts. The two skills together address both surfaces.
+And the surface beneath the CLI — your library code, your handlers, your retry loops — often has its own pile of error-handling debt: swallowed exceptions, `unwrap()` in library code, lost cause chains, log-and-rethrow patterns producing duplicate operator alerts. And the *agent* on the other end of the CLI must decide whether to retry, apply a fix, or hand the situation back to a human — without re-inventing the contract the producer already wrote. The three skills together address all three surfaces.
 
-## The two skills at a glance
+## The three skills at a glance
 
 ### `cdc-err` — CLI error output
 
@@ -47,18 +52,41 @@ Produces (one of):
 
 Four modes: **Review**, **Refactor**, **Design** (when no code exists yet), **Work-Plan** (large effort).
 
+### `cdc-handle` — agent-side envelope interpretation and action
+
+Triggers on phrases like *"interpret this error"*, *"should I retry this CLI error"*, *"the tool_result has problem+json"*, *"can I auto-apply this suggested_fix"*, *"what does this retry_after mean"*. Also auto-triggers whenever a `tool_result` payload contains the cdc-err contract fields (`retry_after` / `suggested_fix` / `code_actions[]`) or a `problem+json` body.
+
+Produces an **executable action plan** in one of three modes:
+1. **Parse** — structured summary of the envelope (envelope_kind, status_class, extension values, applicability markers, malformations).
+2. **Decide** — a single decision (`retry` / `apply_fix` / `handback` / `abort`) with the reasoning and the envelope fields the decision rests on.
+3. **Act** — a JSON action plan the agent can execute, with each step carrying `kind`, `applicability_gate`, `action`, `args`, and `on_failure`.
+
+The non-negotiable is the applicability gate: a `suggested_fix` or `code_actions[]` entry is only auto-applied when its applicability is `machine_applicable`. Anything else — `maybe_incorrect`, `has_placeholders`, `unspecified`, or absent applicability — routes to `handback`. This is the consumer half of the contract `cdc-err` writes on the producer side.
+
 ## How the skills cooperate
 
 | Situation | Which skill |
 |---|---|
 | "Review my Rust CLI's error propagation chain" | `cdc-review` |
 | "What fields should my problem+json envelope include?" | `cdc-err` |
+| "I just got back a 429 with retry_after=30 — should I retry?" | `cdc-handle` |
 | "Review this Cobra command — propagation **and** output format" | Both. `cdc-review` covers propagation; `cdc-err` covers output. They cross-link. |
+| "The CLI returned a problem+json error — what should the agent do?" | `cdc-handle` |
 | "My Python library swallows database errors silently" | `cdc-review` |
 | "Convert my CLI's rate-limit error to dual format" | `cdc-err` |
+| "Can I auto-apply this suggested_fix that came back from the CLI?" | `cdc-handle` |
 | "Refactor my service's exception hierarchy" | `cdc-review` |
 
-When either skill encounters work outside its scope, it names the sibling and hands off rather than inventing guidance outside its lane.
+When any skill encounters work outside its scope, it names the right sibling and hands off rather than inventing guidance outside its lane.
+
+## Documentation
+
+Organized per [Diátaxis](https://diataxis.fr/) under [`docs/`](docs/):
+
+- **Tutorial** — [Get started with the plugin](docs/tutorials/getting-started.md)
+- **How-to** — [Install](docs/how-to/install.md) · [Add cdc-err to a CLI](docs/how-to/add-cdc-err-to-cli.md) · [Run evals](docs/how-to/run-evals.md)
+- **Reference** — [Index](docs/reference/index.md) (envelope, severity, language refs)
+- **Explanation** — [Dual-consumer problem](docs/explanation/dual-consumer.md) · [Why two sibling skills](docs/explanation/skill-cooperation.md)
 
 ## Installation
 
@@ -95,6 +123,12 @@ Both skills decline cleanly outside their scope:
 - Security beyond error-related (SQL injection, XSS, auth — different domain). Information leakage *in* error messages **is** in scope.
 - Business-logic correctness.
 
+`cdc-handle` declines on:
+- Non-RFC-9457 payloads (raw stderr, ad-hoc JSON error shapes, plaintext tracebacks). Defer to a general-purpose error reader.
+- Designing the envelope — that's `cdc-err`.
+- Reviewing the CLI's internal error-propagation code — that's `cdc-review`.
+- Generic HTTP retry policies for browser frontends.
+
 If you ask outside their scope, they say so and use general knowledge or point you at the right tool.
 
 ## What's out of scope (honestly marked)
@@ -124,62 +158,76 @@ If you ask outside their scope, they say so and use general knowledge or point y
 │   │   │   └── review-checklist.md  # 7-section audit checklist for error output
 │   │   └── evals/
 │   │       └── evals.json           # 12 evals, 50 LLM expectations, 63 deterministic checks (55.8%)
-│   └── cdc-review/
+│   ├── cdc-review/
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   │   ├── checklist.md         # 8-section code review checklist
+│   │   │   ├── severity.md          # must-fix/should-fix/nit/question/praise + error-handling criteria
+│   │   │   ├── workplan.md          # YAML work-plan format for large refactors
+│   │   │   └── languages/
+│   │   │       ├── rust.md          # thiserror/anyhow, ?, panic boundaries
+│   │   │       ├── go.md            # errors.Is/As, %w, errors.Join
+│   │   │       ├── python.md        # PEP 3134, raise from, with, contextlib.suppress
+│   │   │       ├── typescript.md    # Error cause, neverthrow, async pitfalls
+│   │   │       └── java.md          # try-with-resources, checked vs unchecked
+│   │   └── evals/
+│   │       └── evals.json           # 12 evals, 53 expectations, 53 deterministic checks (50%)
+│   └── cdc-handle/
 │       ├── SKILL.md
 │       ├── references/
-│       │   ├── checklist.md         # 8-section code review checklist
-│       │   ├── severity.md          # must-fix/should-fix/nit/question/praise + error-handling criteria
-│       │   ├── workplan.md          # YAML work-plan format for large refactors
-│       │   └── languages/
-│       │       ├── rust.md          # thiserror/anyhow, ?, panic boundaries
-│       │       ├── go.md            # errors.Is/As, %w, errors.Join
-│       │       ├── python.md        # PEP 3134, raise from, with, contextlib.suppress
-│       │       ├── typescript.md    # Error cause, neverthrow, async pitfalls
-│       │       └── java.md          # try-with-resources, checked vs unchecked
+│       │   ├── parsing.md           # recognize cdc-err envelopes; status classes; malformation catalogue
+│       │   ├── decision-tree.md     # retry / apply_fix / handback / abort lattice
+│       │   ├── applicability.md     # machine_applicable / maybe_incorrect / has_placeholders / unspecified gate
+│       │   └── code-actions.md      # translating code_actions[] entries into executable plan steps
 │       └── evals/
-│           └── evals.json           # 12 evals, 53 expectations, 53 deterministic checks (50%)
+│           └── evals.json           # 15 evals, 69 expectations, 76 deterministic checks (52.4%)
 ├── README.md
-└── .gitignore                       # ignores transient *-autoresearch/, *-workspace/, *-dashboard.html
+├── docs/                             # Diátaxis-organized docs (tutorials/how-to/reference/explanation)
+└── .gitignore                        # see file for full ignore list
 ```
 
 Standard Claude Code plugin layout — `.claude-plugin/plugin.json` at the root, skills auto-discovered under `skills/`. No `skills` array in `plugin.json` (auto-discovery handles that).
 
 ## Iterating on either skill
 
-The repo is set up for autonomous skill improvement via the [`autoresearch`](https://github.com/zircote/marketplace) plugin:
+The repo is set up for autonomous skill improvement via the [`autoresearch`](https://github.com/zircote/autoresearch) plugin:
 
 ```bash
 # Audit/upgrade the eval set (deterministic checks, discriminating expectations)
 /autoresearch --eval-doctor skills/cdc-err
 /autoresearch --eval-doctor skills/cdc-review
+/autoresearch --eval-doctor skills/cdc-handle
 
 # Run the modify → evaluate → keep-or-discard loop
 /autoresearch skills/cdc-err
 /autoresearch skills/cdc-review
+/autoresearch skills/cdc-handle
 ```
 
 Both eval sets carry ≥50% deterministic-check ratio with grep-anchored regex on the canonical RFC 9457 fields (`cdc-err`) and the error-handling pattern tokens (`cdc-review`) — so the loop has real signal to optimize against, not just presence-only assertions.
 
 ## Validation
 
-Both skills pass the canonical Anthropic skill validator:
+Both skills have the required SKILL.md frontmatter (`name`, `description`) and `plugin.json` carries the canonical Claude Code plugin schema fields (`name`, `version`, `description`, `author`, `license`, `keywords`).
+
+Quick check from the repo root:
 
 ```bash
-python3 -c "from scripts.quick_validate import validate_skill; \
-  print(validate_skill('./skills/cdc-err'))"
-# (True, 'Skill is valid!')
+# Each SKILL.md has the required frontmatter
+for s in skills/*/SKILL.md; do
+  head -5 "$s" | grep -E '^(name|description):' | wc -l | xargs -I{} echo "$s: {} required fields"
+done
 
-python3 -c "from scripts.quick_validate import validate_skill; \
-  print(validate_skill('./skills/cdc-review'))"
-# (True, 'Skill is valid!')
+# plugin.json parses and has all canonical fields
+jq -e 'has("name") and has("version") and has("description") and has("author") and has("license") and has("keywords")' \
+  .claude-plugin/plugin.json
 ```
-
-`plugin.json` follows the canonical Claude Code plugin schema (`name`, `version`, `description`, `author`, `license`, `keywords`).
 
 ## Sources and authority
 
 - **`cdc-err`** traces all prescriptions to https://zircote.com/blog/2026/04/cli-error-messages-are-a-dual-consumer-problem/. The post is the only authority; anything outside it is marked **out of scope** rather than invented. Upstream sources cited in the post: RFC 9457, RFC 7231 §7.1.3, SARIF 2.1.0, LSP 3.17, Anthropic tool-use docs, miette, rustc diagnostic guide.
 - **`cdc-review`** draws on multiple sources: Rust API guidelines (`C-GOOD-ERR`, `C-PANIC-FREE`), Go `errors` package guidance + 2019 error-values design, PEP 3134 (Python exception chaining), *Effective Java* items 69-77, ES2022 `Error.cause`. Each principle is cited in the relevant language reference rather than at a single canonical URL.
+- **`cdc-handle`** consumes the same contract `cdc-err` produces. Authority chain: cdc-err's `references/envelope.md` is the schema; RFC 9457 § 3 (Problem Details for HTTP APIs) is the upstream standard; rustc's diagnostic guide is the source of the applicability markers (`machine_applicable` / `maybe_incorrect` / `has_placeholders` / `unspecified`); LSP's `CodeAction` interface is the shape used for `code_actions[]` entries.
 
 ## License
 

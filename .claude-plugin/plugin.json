@@ -1,7 +1,7 @@
 {
   "name": "error-handling",
-  "version": "0.2.0",
-  "description": "Two sibling skills for CLI/code error handling: cdc-err (RFC 9457 dual-consumer envelopes for CLI output) and cdc-review (source-code error-handling review across any language with classified findings, diffs, and YAML work plans).",
+  "version": "0.3.0",
+  "description": "Three sibling skills covering the full CLI/code error-handling lifecycle: cdc-err (RFC 9457 dual-consumer envelopes for CLI output), cdc-review (source-code error-handling review across any language), and cdc-handle (LLM-agent consumer-side interpretation and action on cdc-err envelopes in tool_result payloads).",
   "author": {
     "name": "zircote",
     "email": "zircote@zircote.com",
@@ -22,7 +22,14 @@
     "code-review",
     "cdc-err",
     "cdc-review",
+    "cdc-handle",
     "error-propagation",
-    "exception-handling"
+    "exception-handling",
+    "applicability-markers",
+    "retry-after",
+    "code-actions",
+    "agent-consumer",
+    "tool-result",
+    "executable-action-plan"
   ]
 }
