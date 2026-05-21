@@ -1,0 +1,331 @@
+{
+  "skill_name": "cdc-handle",
+  "source_url": "../cdc-err/references/envelope.md",
+  "evals": [
+    {
+      "id": 1,
+      "name": "parse-well-formed-cdc-err",
+      "category": "parse",
+      "prompt": "A tool I invoked returned this body in its tool_result:\n\n```json\n{\n  \"type\": \"https://api.example.com/errors/rate-limit-exceeded\",\n  \"title\": \"Rate limit exceeded\",\n  \"status\": 429,\n  \"detail\": \"Exceeded 100 requests/minute on /v1/embed.\",\n  \"instance\": \"urn:request:2026-05-21T14:22:10Z-req-abc123\",\n  \"retry_after\": 180,\n  \"suggested_fix\": { \"value\": \"Wait 180 seconds before retrying.\", \"applicability\": \"machine_applicable\" },\n  \"code_actions\": [{ \"kind\": \"retry\", \"title\": \"Retry after 180 seconds\", \"applicability\": \"machine_applicable\", \"args\": { \"delay_s\": 180 } }]\n}\n```\n\nParse this — just tell me what is in the envelope. Do not propose an action. Save your answer to answer.md.",
+      "expected_output": "Parse-mode output naming envelope_kind=cdc-err, status_class=transient, the type URI, the retry_after value, the suggested_fix value plus applicability, the code_actions entry plus its kind and applicability, and no malformations.",
+      "expectations": [
+        "Identifies envelope_kind as cdc-err",
+        "Classifies status_class as transient (429)",
+        "Names retry_after with value 180",
+        "Names suggested_fix.applicability as machine_applicable",
+        "Lists at least one code_action with kind=retry and applicability=machine_applicable",
+        "Does not propose a decision or action (Parse mode only)"
+      ],
+      "deterministic_checks": [
+        { "type": "file_contains", "file": "answer.md", "literal": "cdc-err", "description": "Identifies envelope as cdc-err-shaped" },
+        { "type": "file_contains", "file": "answer.md", "literal": "transient", "description": "Status class transient" },
+        { "type": "file_contains", "file": "answer.md", "literal": "180", "description": "retry_after value 180 surfaced" },
+        { "type": "file_contains", "file": "answer.md", "literal": "machine_applicable", "description": "applicability marker named" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "kind[\"']?\\s*[:=]?\\s*[\"']?retry", "description": "code_action kind retry surfaced" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(parse|no\\s+decision|no\\s+action\\s+proposed|parse\\s+mode)", "description": "Output identifies itself as parse-only (no decision)" },
+        { "type": "file_contains", "file": "answer.md", "literal": "429", "description": "Names status 429" },
+        { "type": "file_contains", "file": "answer.md", "literal": "retry_after", "description": "Mentions retry_after field" },
+        { "type": "file_contains", "file": "answer.md", "literal": "code_actions", "description": "Mentions code_actions field" }
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "parse-malformed-missing-extensions",
+      "category": "parse",
+      "prompt": "I got this back from a CLI in a tool_result:\n\n```json\n{\n  \"type\": \"https://api.example.com/errors/upstream-unavailable\",\n  \"title\": \"Upstream unavailable\",\n  \"status\": 503,\n  \"detail\": \"The embedding service is unreachable.\",\n  \"instance\": \"urn:request:2026-05-21T14:23:00Z-req-def456\"\n}\n```\n\nIs this a cdc-err envelope? What's wrong with it? Save your answer to answer.md.",
+      "expected_output": "Identifies the body as RFC 9457 but NOT cdc-err-shaped (all three mandatory extensions absent). Status class transient (503). Lists at least two malformations: missing retry_after on a transient status, and all three mandatory extensions absent.",
+      "expectations": [
+        "States the envelope is RFC 9457 but not cdc-err-shaped",
+        "Classifies status_class as transient (503)",
+        "Flags that retry_after is absent on a transient status",
+        "Flags that all three mandatory cdc-err extensions are absent",
+        "Names the malformations explicitly rather than treating the envelope as well-formed"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(rfc\\s*9457\\b.*not.*cdc[-_]err|not\\s+cdc[-_]err|rfc9457-only)", "description": "States envelope is RFC 9457 but not cdc-err" },
+        { "type": "file_contains", "file": "answer.md", "literal": "transient", "description": "Classifies status as transient" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(retry_after.*(absent|missing|not\\s+present)|missing\\s+retry_after)", "description": "Flags missing retry_after" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(extensions?.*(absent|missing|not\\s+present)|mandatory.*(absent|missing))", "description": "Flags absent extensions" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(malform|malformation)", "description": "Uses malformation terminology" },
+        { "type": "file_contains", "file": "answer.md", "literal": "503", "description": "Names status 503" },
+        { "type": "file_contains", "file": "answer.md", "literal": "retry_after", "description": "Mentions retry_after field" }
+      ],
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "decide-429-with-retry-after",
+      "category": "decide",
+      "prompt": "Should I retry? The tool returned:\n\n```json\n{\n  \"type\": \"https://api.example.com/errors/rate-limit-exceeded\",\n  \"title\": \"Rate limit exceeded\",\n  \"status\": 429,\n  \"detail\": \"Exceeded rate limit.\",\n  \"instance\": \"urn:request:abc\",\n  \"retry_after\": 30,\n  \"suggested_fix\": null,\n  \"code_actions\": []\n}\n```\n\nGive me your decision. Save your answer to answer.md.",
+      "expected_output": "Decision = retry. Reason cites status 429 + retry_after present. Plan empty (Decide mode only) or a single retry step with delay_s=30.",
+      "expectations": [
+        "Decision is retry",
+        "Reason mentions 429 / transient class",
+        "Reason mentions retry_after present",
+        "The delay value 30 is named",
+        "Does not invent a backoff that contradicts retry_after"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+retry\\b|\\bretry\\b.*decision", "description": "Decision = retry" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)retry_after", "description": "Reason references retry_after" },
+        { "type": "file_contains", "file": "answer.md", "literal": "30", "description": "Names the retry delay value" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)\\b429\\b|transient", "description": "Names 429 or transient class" },
+        { "type": "file_contains", "file": "answer.md", "literal": "429", "description": "Status 429 referenced" }
+      ],
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "decide-503-without-retry-after",
+      "category": "decide",
+      "prompt": "Should I retry?\n\n```json\n{\n  \"type\": \"https://api.example.com/errors/upstream-down\",\n  \"title\": \"Upstream down\",\n  \"status\": 503,\n  \"detail\": \"Service unavailable.\",\n  \"instance\": \"urn:request:xyz\",\n  \"retry_after\": null,\n  \"suggested_fix\": null,\n  \"code_actions\": []\n}\n```\n\nSave your answer to answer.md.",
+      "expected_output": "Decision = handback. Reason: 503 (transient) with retry_after null/absent — an agent guessing a backoff is what cdc-err exists to prevent.",
+      "expectations": [
+        "Decision is handback (NOT retry)",
+        "Reason cites 503 / transient with retry_after null or absent",
+        "Reason explicitly says do not guess a backoff",
+        "Output does not propose a retry with an invented delay"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+handback\\b|\\bhandback\\b.*decision", "description": "Decision = handback" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)retry_after.*(null|absent|missing|not\\s+present)", "description": "Reason notes retry_after null/absent" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(do\\s+not\\s+guess|don[''']t\\s+guess|no\\s+guess|cannot\\s+guess|never\\s+guess|won[''']t\\s+guess)", "description": "Explicitly refuses to guess a backoff" },
+        { "type": "file_contains", "file": "answer.md", "literal": "503", "description": "Names status 503" },
+        { "type": "file_contains", "file": "answer.md", "literal": "transient", "description": "Names transient class" }
+      ],
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "decide-client-error-machine-applicable",
+      "category": "decide",
+      "prompt": "Decision?\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/missing-env\",\n  \"title\": \"Missing env\",\n  \"status\": 422,\n  \"detail\": \"EMBED_API_KEY is required.\",\n  \"instance\": \"urn:request:p\",\n  \"retry_after\": null,\n  \"suggested_fix\": { \"value\": \"export EMBED_API_KEY=$(get-key)\", \"applicability\": \"machine_applicable\" },\n  \"code_actions\": [{ \"kind\": \"env-set\", \"applicability\": \"machine_applicable\", \"args\": { \"name\": \"EMBED_API_KEY\", \"value\": \"<from-vault>\" } }]\n}\n```\n\nSave your answer to answer.md.",
+      "expected_output": "Decision = apply_fix. Reason: client_error (422) with machine_applicable applicability on both suggested_fix and the env-set code_action.",
+      "expectations": [
+        "Decision is apply_fix",
+        "Reason cites client_error / 422",
+        "Reason explicitly notes machine_applicable applicability",
+        "References env-set as the code_action kind",
+        "Does not propose retry on a 422"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+apply_fix|apply_fix.*decision", "description": "Decision = apply_fix" },
+        { "type": "file_contains", "file": "answer.md", "literal": "machine_applicable", "description": "Names the applicability marker" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)\\b422\\b|client[\\s_-]?error", "description": "Names 422 or client_error" },
+        { "type": "file_contains", "file": "answer.md", "literal": "env-set", "description": "Names env-set kind" },
+        { "type": "file_contains", "file": "answer.md", "literal": "EMBED_API_KEY", "description": "References the env var from the envelope" }
+      ],
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "decide-client-error-maybe-incorrect",
+      "category": "decide",
+      "prompt": "Decision?\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/bad-flag\",\n  \"title\": \"Bad flag\",\n  \"status\": 400,\n  \"detail\": \"Unknown option --threshold.\",\n  \"instance\": \"urn:request:q\",\n  \"retry_after\": null,\n  \"suggested_fix\": { \"value\": \"Did you mean --max?\", \"applicability\": \"maybe_incorrect\" },\n  \"code_actions\": []\n}\n```\n\nSave your answer to answer.md.",
+      "expected_output": "Decision = handback. Reason: 400 client error with applicability maybe_incorrect — the applicability gate has not been cleared. Suggested fix is surfaced as a proposed action, not auto-applied.",
+      "expectations": [
+        "Decision is handback (NOT apply_fix)",
+        "Reason cites maybe_incorrect applicability",
+        "Output explicitly states the fix is NOT auto-applied",
+        "Surfaces the proposed fix to the human (does not silently drop it)"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+handback|handback.*decision", "description": "Decision = handback" },
+        { "type": "file_contains", "file": "answer.md", "literal": "maybe_incorrect", "description": "Names the applicability marker" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(not\\s+auto[\\s_-]?appl(y|ied)|do\\s+not\\s+auto[\\s_-]?appl|never\\s+auto[\\s_-]?appl|surface.*human|hand\\s*back)", "description": "Says fix is not auto-applied / is handed back" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "--max|threshold", "description": "Names the proposed flag or symbol from the envelope" },
+        { "type": "file_contains", "file": "answer.md", "literal": "400", "description": "Names status 400" }
+      ],
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "decide-has-placeholders",
+      "category": "decide",
+      "prompt": "Decision?\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/missing-dep\",\n  \"title\": \"Missing dependency\",\n  \"status\": 422,\n  \"detail\": \"Package <name> is required.\",\n  \"instance\": \"urn:request:r\",\n  \"retry_after\": null,\n  \"suggested_fix\": { \"value\": \"Run: pip install <name>\", \"applicability\": \"has_placeholders\" },\n  \"code_actions\": [{ \"kind\": \"exec\", \"applicability\": \"has_placeholders\", \"args\": { \"command\": \"pip install <name>\" } }]\n}\n```\n\nSave your answer to answer.md.",
+      "expected_output": "Decision = handback. Reason: has_placeholders applicability — the fix template needs a value for <name>. Output enumerates <name> as a placeholder.",
+      "expectations": [
+        "Decision is handback",
+        "Reason cites has_placeholders",
+        "Output names <name> as the placeholder to be filled",
+        "Output does NOT auto-apply the fix",
+        "Output does NOT autonomously substitute a guessed value for <name>"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+handback|handback.*decision", "description": "Decision = handback" },
+        { "type": "file_contains", "file": "answer.md", "literal": "has_placeholders", "description": "Names the applicability marker" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "<name>|placeholder", "description": "Names <name> or placeholder explicitly" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "pip\\s+install", "description": "References the command shape from the envelope" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(not\\s+auto[\\s_-]?appl|do\\s+not\\s+(apply|substitute)|never\\s+(apply|substitute)|will\\s+not\\s+(apply|substitute))", "description": "Refuses auto-apply and auto-substitution" }
+      ],
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "decide-applicability-absent",
+      "category": "decide",
+      "prompt": "Decision?\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/bad-config\",\n  \"title\": \"Bad config\",\n  \"status\": 422,\n  \"detail\": \"timeout must be > 0.\",\n  \"instance\": \"urn:request:s\",\n  \"retry_after\": null,\n  \"suggested_fix\": { \"value\": \"Set timeout to 30.\" },\n  \"code_actions\": []\n}\n```\n\nNote that suggested_fix has no applicability field. Save your answer to answer.md.",
+      "expected_output": "Decision = handback. Reason: applicability is absent — treated as unspecified — treated as maybe_incorrect — do not auto-apply. Output records this as a malformation as well.",
+      "expectations": [
+        "Decision is handback",
+        "Identifies that applicability is absent on suggested_fix",
+        "States the absent-applicability rule (treated as unspecified / maybe_incorrect)",
+        "Does NOT auto-apply the fix",
+        "Records the absent applicability as a malformation"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+handback|handback.*decision", "description": "Decision = handback" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)applicability.*(absent|missing|not\\s+present|no\\s+applicability)", "description": "Names that applicability is absent" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(unspecified|maybe_incorrect|treat(ed)?\\s+as)", "description": "Names the default-to-unspecified/maybe_incorrect rule" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(malform|malformation)", "description": "Records the absent-applicability as a malformation" }
+      ],
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "act-retry-plan",
+      "category": "act",
+      "prompt": "I want you to produce an Act-mode plan. The envelope:\n\n```json\n{\n  \"type\": \"https://api.example.com/errors/rate-limit-exceeded\",\n  \"title\": \"Rate limit exceeded\",\n  \"status\": 429,\n  \"detail\": \"Exceeded rate limit.\",\n  \"instance\": \"urn:request:tt\",\n  \"retry_after\": 60,\n  \"suggested_fix\": { \"value\": \"Wait 60s.\", \"applicability\": \"machine_applicable\" },\n  \"code_actions\": [{ \"kind\": \"retry\", \"applicability\": \"machine_applicable\", \"args\": { \"delay_s\": 60 } }]\n}\n```\n\nProduce the executable action plan as JSON. Save it to answer.md.",
+      "expected_output": "An executable plan with decision=retry, one plan step of kind=retry, applicability_gate=machine_applicable, args.delay_s=60, on_failure=handback, and envelope_refs naming status=429 and retry_after=60.",
+      "expectations": [
+        "Output contains a JSON plan with a decision field equal to retry",
+        "Plan has at least one step with kind retry",
+        "Plan step references delay_s=60",
+        "Plan step records applicability_gate=machine_applicable",
+        "Plan step has an on_failure field (typically handback)",
+        "envelope_refs surfaces status=429 and retry_after=60"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"decision\"\\s*:\\s*\"retry\"", "description": "JSON plan has decision=retry" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"kind\"\\s*:\\s*\"retry\"", "description": "Plan step kind=retry" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"delay_s\"\\s*:\\s*60", "description": "delay_s=60 named" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"applicability_gate\"\\s*:\\s*\"machine_applicable\"", "description": "applicability_gate named" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"on_failure\"\\s*:", "description": "on_failure field present" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"envelope_refs\"\\s*:", "description": "envelope_refs field present" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"status\"\\s*:\\s*429", "description": "status=429 surfaced in envelope_refs" }
+      ],
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "act-handback-plan",
+      "category": "act",
+      "prompt": "Produce an Act-mode plan for this envelope:\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/missing-config\",\n  \"title\": \"Missing config\",\n  \"status\": 422,\n  \"detail\": \"config.yml has no apiToken.\",\n  \"instance\": \"urn:request:uu\",\n  \"retry_after\": null,\n  \"suggested_fix\": { \"value\": \"Add apiToken to config.yml.\", \"applicability\": \"maybe_incorrect\" },\n  \"code_actions\": []\n}\n```\n\nSave to answer.md.",
+      "expected_output": "An executable plan with decision=handback, one plan step of kind=handback with action=emit_handback_to_user, the proposed fix surfaced verbatim in args.",
+      "expectations": [
+        "Plan has decision=handback (not apply_fix or retry)",
+        "Plan step has kind=handback",
+        "Plan step describes the proposed fix without applying it",
+        "The applicability_gate is maybe_incorrect",
+        "No file edit or shell command is run"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"decision\"\\s*:\\s*\"handback\"", "description": "JSON plan has decision=handback" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"kind\"\\s*:\\s*\"handback\"", "description": "Plan step kind=handback" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"applicability_gate\"\\s*:\\s*\"maybe_incorrect\"", "description": "applicability_gate=maybe_incorrect" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)emit_handback_to_user|handback", "description": "Action emits handback rather than running a command/edit" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"on_failure\"\\s*:", "description": "on_failure field present" }
+      ],
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "act-unknown-kind-handback",
+      "category": "act",
+      "prompt": "Produce an Act plan. The code_action has an unfamiliar kind:\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/credential-rotation\",\n  \"title\": \"Credential rotation needed\",\n  \"status\": 500,\n  \"detail\": \"Vault credentials expired.\",\n  \"instance\": \"urn:request:zz\",\n  \"retry_after\": null,\n  \"suggested_fix\": null,\n  \"code_actions\": [{ \"kind\": \"rotate-credentials\", \"applicability\": \"machine_applicable\", \"args\": { \"vault\": \"prod\" } }]\n}\n```\n\nSave to answer.md.",
+      "expected_output": "Decision = handback even though applicability is machine_applicable, because the kind 'rotate-credentials' is not recognized. Plan surfaces the original code_action verbatim and asks the human to confirm. Skill does NOT invent semantics for the unknown kind.",
+      "expectations": [
+        "Decision is handback (NOT apply_fix)",
+        "Plan names the unknown kind 'rotate-credentials' verbatim",
+        "Plan explicitly says the kind is not recognized",
+        "Original code_action is included verbatim in the handback args",
+        "Skill does not invent a tool call for rotate-credentials"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "\"decision\"\\s*:\\s*\"handback\"", "description": "Decision = handback even with machine_applicable" },
+        { "type": "file_contains", "file": "answer.md", "literal": "rotate-credentials", "description": "Names the unknown kind verbatim" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(not\\s+recognized|unknown\\s+kind|unknown.*kind|do(es)?\\s+not\\s+recognize)", "description": "States kind is not recognized" },
+        { "type": "file_contains", "file": "answer.md", "literal": "machine_applicable", "description": "Surfaces the applicability marker from the envelope" },
+        { "type": "file_contains", "file": "answer.md", "literal": "prod", "description": "Surfaces the args.vault value from the envelope" }
+      ],
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "handoff-to-cdc-err",
+      "category": "handoff",
+      "prompt": "I'm designing my CLI's error output. What fields should the problem+json envelope contain? Save your answer to answer.md.",
+      "expected_output": "Skill recognizes this is a producer-side question and defers to cdc-err. It names cdc-err explicitly and does not attempt to enumerate the envelope schema itself.",
+      "expectations": [
+        "Output names cdc-err as the sibling skill to consult",
+        "Output states the current question is producer-side / out of scope for cdc-handle",
+        "Output does NOT enumerate the full envelope schema itself"
+      ],
+      "deterministic_checks": [
+        { "type": "file_contains", "file": "answer.md", "literal": "cdc-err", "description": "Names cdc-err as the sibling" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(producer[\\s_-]?side|out\\s+of\\s+scope|defer|hand(\\s+|-)?off|wrong\\s+skill)", "description": "States this is a producer/out-of-scope question" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(consumer|consume|interpret|decision|act\\s+on|handle)", "description": "Defines cdc-handle's lane as consumer-side" }
+      ],
+      "files": []
+    },
+    {
+      "id": 13,
+      "name": "handoff-to-cdc-review",
+      "category": "handoff",
+      "prompt": "The CLI that's emitting these problem+json errors has bad error-propagation upstream — it's swallowing exceptions before they reach the formatter. Review the code. Save your answer to answer.md.",
+      "expected_output": "Skill recognizes this is a source-code propagation question and defers to cdc-review. It names cdc-review explicitly and does not attempt the code review itself.",
+      "expectations": [
+        "Output names cdc-review as the sibling skill to consult",
+        "Output states the current question is source-code propagation / out of scope for cdc-handle",
+        "Output does NOT attempt to review the propagation itself"
+      ],
+      "deterministic_checks": [
+        { "type": "file_contains", "file": "answer.md", "literal": "cdc-review", "description": "Names cdc-review as the sibling" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(propagation|source[\\s_-]?code|out\\s+of\\s+scope|defer|hand(\\s+|-)?off)", "description": "States this is a propagation/out-of-scope question" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(swallow|propagat|exception|error[\\s-]?handling\\s+code)", "description": "Identifies the question as about source-code error-handling" }
+      ],
+      "files": []
+    },
+    {
+      "id": 14,
+      "name": "out-of-scope-raw-stderr",
+      "category": "out-of-scope",
+      "prompt": "The tool spat out this plain stderr:\n\n```\nTraceback (most recent call last):\n  File \"app.py\", line 12, in <module>\n    fetch(sys.argv[1])\n  File \"app.py\", line 7, in fetch\n    r.raise_for_status()\nrequests.exceptions.HTTPError: 503 Server Error\n```\n\nWhat should I do? Save your answer to answer.md.",
+      "expected_output": "Skill recognizes this is not a problem+json envelope. It says so explicitly, declines to act with the cdc-handle decision lattice, and either hands back to the user or recommends a more general error-reader / asks for an actual envelope.",
+      "expectations": [
+        "Output states explicitly that this is not a problem+json envelope / not RFC 9457",
+        "Output declines to produce a Parse/Decide/Act response based on this payload",
+        "Output does NOT invent a decision (e.g. does not silently emit decision=retry)",
+        "Output suggests the user obtain an actual envelope or use a different tool"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(not.*problem\\+?json|not.*rfc\\s*9457|not.*cdc[-_]err.*envelope|out\\s+of\\s+scope|raw\\s+stderr|traceback)", "description": "Identifies the payload as not-an-envelope or raw stderr" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(decline|cannot\\s+(parse|decide|act)|won[''']t|will\\s+not|out\\s+of\\s+scope)", "description": "Declines to act on a non-envelope" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(envelope|cdc-err|problem\\+?json)", "description": "Names the envelope contract this skill expects" }
+      ],
+      "files": []
+    },
+    {
+      "id": 15,
+      "name": "decide-precedence-stricter-marker-wins",
+      "category": "decide",
+      "prompt": "Decision? Note that suggested_fix and code_actions[0] disagree on applicability:\n\n```json\n{\n  \"type\": \"https://cli.example.com/errors/bad-input\",\n  \"title\": \"Bad input\",\n  \"status\": 422,\n  \"detail\": \"--threshold must be int.\",\n  \"instance\": \"urn:request:vv\",\n  \"retry_after\": null,\n  \"suggested_fix\": { \"value\": \"Pass --threshold=5\", \"applicability\": \"machine_applicable\" },\n  \"code_actions\": [{ \"kind\": \"exec\", \"applicability\": \"maybe_incorrect\", \"args\": { \"command\": \"yourcli --threshold=5\" } }]\n}\n```\n\nSave your answer to answer.md.",
+      "expected_output": "Decision = handback. Reason: applicability disagreement between suggested_fix (machine_applicable) and code_actions[0] (maybe_incorrect) — the stricter marker wins per the safety rule. Output explains the precedence rule.",
+      "expectations": [
+        "Decision is handback",
+        "Reason notes that suggested_fix and code_actions[0] disagree on applicability",
+        "Output explicitly states the stricter marker wins (or 'most cautious wins')",
+        "Output does NOT auto-apply based on the more-permissive suggested_fix"
+      ],
+      "deterministic_checks": [
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)decision[\"'\\s:]+handback|handback.*decision", "description": "Decision = handback" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(stricter\\s+(marker\\s+)?wins|most[\\s-]cautious|safer\\s+wins|err\\s+(on\\s+the\\s+side\\s+of\\s+)?(caution|safety))", "description": "States the stricter-wins precedence rule" },
+        { "type": "regex_match", "file": "answer.md", "pattern": "(?i)(disagree|conflict|contradict|mismatch)", "description": "Names the applicability disagreement" },
+        { "type": "file_contains", "file": "answer.md", "literal": "maybe_incorrect", "description": "Names the stricter applicability marker" },
+        { "type": "file_contains", "file": "answer.md", "literal": "machine_applicable", "description": "Names the more-permissive marker that loses" }
+      ],
+      "files": []
+    }
+  ]
+}
