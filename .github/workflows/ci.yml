@@ -1,0 +1,65 @@
+---
+name: CI
+
+# Validate the plugin/marketplace manifests and the workflow files themselves
+# on every push and PR.
+
+"on":
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Every `uses:` in .github/workflows MUST be pinned to a full 40-char commit
+  # SHA, never a mutable tag or branch (supply-chain hardening: a compromised
+  # tag/branch can't silently change what a workflow runs). Local reusable
+  # calls (`uses: ./...`) are exempt (the action's own documented behavior).
+  pin-check:
+    name: pin-check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Ensure SHA pinned actions
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@3db98c0363e2fa5df3e1c4c471777a7c10b24cc9 # v5.0.5
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1.72.0
+        with:
+          fail_level: error
+          reporter: github-check
+
+  validate:
+    name: claude plugin validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install Claude Code CLI (pinned)
+        env:
+          CLAUDE_VERSION: "2.1.199"
+        run: npm install -g "@anthropic-ai/claude-code@${CLAUDE_VERSION}"
+      - name: Validate marketplace + plugin manifest
+        run: claude plugin validate . --strict

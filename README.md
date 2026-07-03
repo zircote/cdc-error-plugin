@@ -1,4 +1,7 @@
 ---
+id: error-handling-plugin-readme
+type: semantic
+created: 2026-05-20T09:08:01-04:00
 diataxis_type: explanation
 ---
 
@@ -84,28 +87,47 @@ When any skill encounters work outside its scope, it names the right sibling and
 Organized per [Diátaxis](https://diataxis.fr/) under [`docs/`](docs/):
 
 - **Tutorial** — [Get started with the plugin](docs/tutorials/getting-started.md)
-- **How-to** — [Install](docs/how-to/install.md) · [Add cdc-err to a CLI](docs/how-to/add-cdc-err-to-cli.md) · [Run evals](docs/how-to/run-evals.md)
+- **How-to** — [Install](docs/how-to/install.md) · [Add cdc-err to a CLI](docs/how-to/add-cdc-err-to-cli.md) · [Run evals](docs/how-to/run-evals.md) · [Verify a release](docs/how-to/verify-release.md)
 - **Reference** — [Index](docs/reference/index.md) (envelope, severity, language refs)
 - **Explanation** — [Dual-consumer problem](docs/explanation/dual-consumer.md) · [Why two sibling skills](docs/explanation/skill-cooperation.md)
 
 ## Installation
 
-Add this plugin to a Claude Code marketplace, then enable it:
+This repository doubles as its own single-plugin marketplace
+(`.claude-plugin/marketplace.json` lists the one plugin, sourced from the
+repo root):
 
 ```bash
-# If you maintain a personal marketplace pointing at this repo
-claude plugins add error-handling
-
-# Or, for local development, point Claude Code at this directory directly
-# via .claude/settings.json:
-# {
-#   "plugins": {
-#     "marketplaces": [{ "path": "/absolute/path/to/this/repo" }]
-#   }
-# }
+/plugin marketplace add zircote/cdc-error-handling
+/plugin install error-handling@error-handling
 ```
 
-Both skills are auto-discovered from `skills/`. No further configuration.
+For local development, point Claude Code at a checkout directly:
+
+```bash
+/plugin marketplace add /absolute/path/to/this/repo
+/plugin install error-handling@error-handling
+```
+
+All three skills auto-discover from `skills/`. No further configuration.
+See [docs/how-to/install.md](docs/how-to/install.md) for details.
+
+## Versioning and releases
+
+The plugin (`.claude-plugin/plugin.json`) and the marketplace catalog
+(`.claude-plugin/marketplace.json`) carry independent semver `version`
+fields — installing users track the plugin version; the catalog version
+tracks changes to the marketplace listing itself. Plugin changes are
+recorded in [CHANGELOG.md](CHANGELOG.md).
+
+Tagged releases (`vX.Y.Z`) build a reproducible source tarball and attest it
+with SLSA build provenance, a CycloneDX SBOM, six quality-gate verdicts
+(SAST, SCA, IaC/license, Semgrep, secrets, manifest review), and an OpenVEX
+disposition; the marketplace catalog itself is cosign-signed. Every
+attestation and the catalog signature are fail-closed re-verified before
+publishing — see [SECURITY.md](SECURITY.md) for the full security model and
+[docs/how-to/verify-release.md](docs/how-to/verify-release.md) for how to
+independently verify a downloaded release.
 
 ## When the skills won't trigger (and shouldn't)
 
@@ -148,7 +170,14 @@ If you ask outside their scope, they say so and use general knowledge or point y
 ```
 .
 ├── .claude-plugin/
-│   └── plugin.json
+│   ├── plugin.json
+│   └── marketplace.json              # this repo doubles as its own marketplace
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                     # pin-check, actionlint, claude plugin validate
+│       └── release.yml                # tarball -> provenance + SBOM + 6 gates + VEX + cosign -> verify -> publish
+├── .vex/
+│   └── openvex.json                   # vulnerability disposition, attested each release
 ├── skills/
 │   ├── cdc-err/
 │   │   ├── SKILL.md
@@ -182,6 +211,8 @@ If you ask outside their scope, they say so and use general knowledge or point y
 │       └── evals/
 │           └── evals.json           # 15 evals, 69 expectations, 76 deterministic checks (52.4%)
 ├── README.md
+├── CHANGELOG.md                      # Keep a Changelog format
+├── SECURITY.md                       # verification model + gh attestation verify commands
 ├── docs/                             # Diátaxis-organized docs (tutorials/how-to/reference/explanation)
 └── .gitignore                        # see file for full ignore list
 ```
@@ -208,20 +239,17 @@ Both eval sets carry ≥50% deterministic-check ratio with grep-anchored regex o
 
 ## Validation
 
-Both skills have the required SKILL.md frontmatter (`name`, `description`) and `plugin.json` carries the canonical Claude Code plugin schema fields (`name`, `version`, `description`, `author`, `license`, `keywords`).
-
-Quick check from the repo root:
+Canonical validation, run on every push/PR in `.github/workflows/ci.yml`:
 
 ```bash
-# Each SKILL.md has the required frontmatter
-for s in skills/*/SKILL.md; do
-  head -5 "$s" | grep -E '^(name|description):' | wc -l | xargs -I{} echo "$s: {} required fields"
-done
-
-# plugin.json parses and has all canonical fields
-jq -e 'has("name") and has("version") and has("description") and has("author") and has("license") and has("keywords")' \
-  .claude-plugin/plugin.json
+claude plugin validate . --strict
 ```
+
+This checks `marketplace.json` and `plugin.json` schema conformance, and
+(for the local `./` plugin entry) `plugin.json` and each skill's SKILL.md
+frontmatter. CI also runs `actionlint` against the workflow files and
+`pin-check` (every `uses:` in `.github/workflows` must be a full 40-char
+commit SHA).
 
 ## Sources and authority
 
