@@ -133,11 +133,13 @@ jobs:
           if [ "${#files[@]}" -eq 0 ]; then echo "::error::CodeQL produced no SARIF"; exit 1; fi
           jq -s '{"$schema": .[0]."$schema", "version": .[0].version, "runs": (map(.runs) | add)}' \
             "${files[@]}" > results.sarif
-      - name: Upload to code scanning
-        if: always()
-        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
-        with:
-          sarif_file: results.sarif
+      # No separate "upload to code scanning" step here: codeql-action/analyze
+      # already uploads to the Security tab itself (default upload: always).
+      # A second upload-sarif call with the same category fails with
+      # "only one run of the codeql/analyze or codeql/upload-sarif actions is
+      # allowed per job per tool/category" — this is the one gate whose tool
+      # self-uploads; every other gate below needs an explicit upload step
+      # because its scanner doesn't.
       - name: Upload SARIF artifact
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
