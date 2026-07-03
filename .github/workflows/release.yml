@@ -11,7 +11,7 @@ name: Release
 # Unlike a multi-repo org, this repo has no separate central signer: every
 # attestation and the catalog signature are produced by THIS workflow running
 # in THIS repo. Verification still pins the signer workflow explicitly
-# (`--signer-workflow zircote/cdc-error-handling/.github/workflows/release.yml`
+# (`--signer-workflow zircote/cdc-error-plugin/.github/workflows/release.yml`
 # for gh attestation verify; the cosign certificate-identity-regexp is
 # anchored to this same workflow path) — `--repo` alone only proves "some
 # workflow in this repo signed it," not specifically this one. See
@@ -631,7 +631,7 @@ jobs:
           # non-tag ref passing this same regex) requires push access to
           # this repo to exploit, which is already the trust boundary for a
           # solo-maintained repo with no other collaborators.
-          SIGNER_IDENTITY_RE: '^https://github\.com/zircote/cdc-error-handling/\.github/workflows/release\.yml@'
+          SIGNER_IDENTITY_RE: '^https://github\.com/zircote/cdc-error-plugin/\.github/workflows/release\.yml@'
         run: |
           set -euo pipefail
           BLOB=.claude-plugin/marketplace.json

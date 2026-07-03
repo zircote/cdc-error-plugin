@@ -7,8 +7,8 @@
     "email": "zircote@zircote.com",
     "url": "https://github.com/zircote"
   },
-  "homepage": "https://github.com/zircote/cdc-error-handling",
-  "repository": "https://github.com/zircote/cdc-error-handling",
+  "homepage": "https://github.com/zircote/cdc-error-plugin",
+  "repository": "https://github.com/zircote/cdc-error-plugin",
   "license": "MIT",
   "keywords": [
     "cli",

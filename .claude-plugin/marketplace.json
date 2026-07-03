@@ -1,5 +1,5 @@
 {
-  "name": "error-handling",
+  "name": "cdc-errors",
   "description": "Single-plugin marketplace for error-handling: RFC 9457 dual-consumer CLI error envelopes, source-code error-handling review, and LLM-agent consumer-side interpretation of those envelopes.",
   "version": "1.0.0",
   "owner": {

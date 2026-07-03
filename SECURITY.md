@@ -63,9 +63,9 @@ authenticated (`gh auth login`); [`cosign`](https://github.com/sigstore/cosign)
 for the catalog signature.
 
 ```bash
-TARBALL="cdc-error-handling-0.4.0.tar.gz"   # substitute the downloaded release asset
-REPO="zircote/cdc-error-handling"
-SIGNER="zircote/cdc-error-handling/.github/workflows/release.yml"
+TARBALL="cdc-error-plugin-0.4.0.tar.gz"   # substitute the downloaded release asset
+REPO="zircote/cdc-error-plugin"
+SIGNER="zircote/cdc-error-plugin/.github/workflows/release.yml"
 ```
 
 ### 1. SLSA build provenance + CycloneDX SBOM
@@ -97,7 +97,7 @@ gh attestation verify "$TARBALL" --repo "$REPO" --signer-workflow "$SIGNER" \
 A passing verification looks like:
 
 ```
-Loaded digest sha256:... for file://cdc-error-handling-0.4.0.tar.gz
+Loaded digest sha256:... for file://cdc-error-plugin-0.4.0.tar.gz
 Loaded 1 attestation from GitHub API
 ✓ Verification succeeded!
 ```
@@ -109,7 +109,7 @@ Also verify the published checksum, included as a release asset alongside the
 tarball:
 
 ```bash
-sha256sum -c cdc-error-handling-*-checksums.txt   # substitute the downloaded checksums file
+sha256sum -c cdc-error-plugin-*-checksums.txt   # substitute the downloaded checksums file
 ```
 
 ---
@@ -124,7 +124,7 @@ bundle (also a release asset):
 ```bash
 cosign verify-blob .claude-plugin/marketplace.json \
   --bundle marketplace.json.cosign.bundle \
-  --certificate-identity-regexp '^https://github\.com/zircote/cdc-error-handling/\.github/workflows/release\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/zircote/cdc-error-plugin/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 

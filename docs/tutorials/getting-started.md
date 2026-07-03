@@ -22,8 +22,8 @@ You need: Claude Code installed, a terminal, and ~10 minutes.
 In Claude Code:
 
 ```
-/plugin marketplace add zircote/cdc-error-handling
-/plugin install error-handling@error-handling
+/plugin marketplace add zircote/cdc-error-plugin
+/plugin install error-handling@cdc-errors
 ```
 
 When the picker shows `cdc-err`, `cdc-review`, and `cdc-handle` under `Available skills`, the plugin is loaded.

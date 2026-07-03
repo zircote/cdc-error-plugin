@@ -1,5 +1,5 @@
 ---
-id: how-to-install-error-handling-plugin
+id: how-to-install-cdc-error-plugin
 type: procedural
 created: 2026-05-21T10:47:00-04:00
 diataxis_type: how-to
@@ -15,8 +15,8 @@ ordered from most to least common.
 ## From GitHub (recommended)
 
 ```
-/plugin marketplace add zircote/cdc-error-handling
-/plugin install error-handling@error-handling
+/plugin marketplace add zircote/cdc-error-plugin
+/plugin install error-handling@cdc-errors
 ```
 
 Verify all three skills loaded:
@@ -32,8 +32,8 @@ You should see `error-handling` with `cdc-err`, `cdc-review`, and `cdc-handle` u
 Clone the repo, then add it as a local marketplace:
 
 ```
-/plugin marketplace add /absolute/path/to/cdc-error-handling
-/plugin install error-handling@error-handling
+/plugin marketplace add /absolute/path/to/cdc-error-plugin
+/plugin install error-handling@cdc-errors
 ```
 
 To make this automatic for a project (so teammates are prompted to install it),
@@ -42,10 +42,10 @@ add it to `.claude/settings.json`:
 ```json
 {
   "extraKnownMarketplaces": {
-    "error-handling": {
+    "cdc-errors": {
       "source": {
         "source": "github",
-        "repo": "zircote/cdc-error-handling"
+        "repo": "zircote/cdc-error-plugin"
       }
     }
   }

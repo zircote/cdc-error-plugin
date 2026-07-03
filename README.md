@@ -1,5 +1,5 @@
 ---
-id: error-handling-plugin-readme
+id: cdc-error-plugin-readme
 type: semantic
 created: 2026-05-20T09:08:01-04:00
 diataxis_type: explanation
@@ -84,7 +84,7 @@ When any skill encounters work outside its scope, it names the right sibling and
 
 ## Documentation
 
-Organized per [Diátaxis](https://diataxis.fr/) under [`docs/`](docs/):
+Organized per [Diátaxis](https://diataxis.fr/) under [`docs/`](docs/README.md):
 
 - **Tutorial** — [Get started with the plugin](docs/tutorials/getting-started.md)
 - **How-to** — [Install](docs/how-to/install.md) · [Add cdc-err to a CLI](docs/how-to/add-cdc-err-to-cli.md) · [Run evals](docs/how-to/run-evals.md) · [Verify a release](docs/how-to/verify-release.md)
@@ -98,15 +98,15 @@ This repository doubles as its own single-plugin marketplace
 repo root):
 
 ```bash
-/plugin marketplace add zircote/cdc-error-handling
-/plugin install error-handling@error-handling
+/plugin marketplace add zircote/cdc-error-plugin
+/plugin install error-handling@cdc-errors
 ```
 
 For local development, point Claude Code at a checkout directly:
 
 ```bash
 /plugin marketplace add /absolute/path/to/this/repo
-/plugin install error-handling@error-handling
+/plugin install error-handling@cdc-errors
 ```
 
 All three skills auto-discover from `skills/`. No further configuration.

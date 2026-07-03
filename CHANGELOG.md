@@ -17,8 +17,32 @@ tracks the plugin.
 
 ## [Unreleased]
 
+### Changed
+
+- Repository renamed `zircote/cdc-error-handling` -> `zircote/cdc-error-plugin`.
+  Updated every reference to the old slug: `plugin.json`'s `homepage`/
+  `repository`, `release.yml`'s cosign signer-identity regex (would have
+  silently broken the next release's self-verification if missed, since
+  it's hardcoded to the repo path), and every install/verify command
+  example across the docs.
+- Marketplace catalog renamed `error-handling` -> `cdc-errors` in
+  `marketplace.json`'s top-level `name` (the plugin's own `name` is
+  unchanged, still `error-handling` — these are independent identifiers).
+  Updated every `/plugin install error-handling@<marketplace>` example and
+  the `extraKnownMarketplaces` config key to match.
+- Default branch renamed `develop` -> `main`; adopted GitHub Flow (single
+  trunk, feature branches merge back via PR). `ci.yml`'s triggers updated
+  to match. Branch protection added on `main`: `pin-check`, `actionlint`,
+  and `claude plugin validate` required (strict/up-to-date mode), force-push
+  and branch deletion disabled. No required PR review (solo-maintained,
+  no other collaborators to review) and `enforce_admins: false` (admin can
+  still push directly).
+
 ### Added
 
+- `docs/README.md`: an index of all Diátaxis-organized docs, one section
+  per quadrant (tutorial/how-to/reference/explanation) plus links to the
+  root-level documents.
 - `docs/explanation/attested-releases.md`: why the release pipeline has the
   scope and shape it does (six gates + SBOM + VEX + cosign for a repo with
   no dependency tree, no central signer).

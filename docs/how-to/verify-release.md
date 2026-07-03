@@ -37,19 +37,19 @@ new tag ships each release.
 
 ```bash
 TAG="v0.4.0"   # substitute the release tag you're verifying
-gh release download "$TAG" --repo zircote/cdc-error-handling --dir ./dl
+gh release download "$TAG" --repo zircote/cdc-error-plugin --dir ./dl
 cd ./dl
 ls
-# cdc-error-handling-<version>.tar.gz
-# cdc-error-handling-<version>-sbom.cdx.json
-# cdc-error-handling-<version>-checksums.txt
+# cdc-error-plugin-<version>.tar.gz
+# cdc-error-plugin-<version>-sbom.cdx.json
+# cdc-error-plugin-<version>-checksums.txt
 # marketplace.json.cosign.bundle
 ```
 
 ## Step 2 — Verify the checksum
 
 ```bash
-sha256sum -c cdc-error-handling-*-checksums.txt
+sha256sum -c cdc-error-plugin-*-checksums.txt
 ```
 
 This only proves the download wasn't corrupted or truncated — it says
@@ -58,21 +58,21 @@ nothing about who built it. That's what the attestation is for.
 ## Step 3 — Verify the provenance attestation
 
 ```bash
-gh attestation verify cdc-error-handling-*.tar.gz \
-  --repo zircote/cdc-error-handling \
-  --signer-workflow zircote/cdc-error-handling/.github/workflows/release.yml \
+gh attestation verify cdc-error-plugin-*.tar.gz \
+  --repo zircote/cdc-error-plugin \
+  --signer-workflow zircote/cdc-error-plugin/.github/workflows/release.yml \
   --predicate-type https://slsa.dev/provenance/v1
 ```
 
 A passing verification looks like:
 
 ```
-Loaded digest sha256:... for file://cdc-error-handling-0.4.0.tar.gz
+Loaded digest sha256:... for file://cdc-error-plugin-0.4.0.tar.gz
 Loaded 1 attestation from GitHub API
 ✓ Verification succeeded!
 ```
 
-This proves the tarball was built by `zircote/cdc-error-handling`'s own
+This proves the tarball was built by `zircote/cdc-error-plugin`'s own
 `release.yml` workflow, from the commit the release tag points at, and hasn't
 been modified since. `gh attestation verify` exits non-zero on any mismatch
 — treat a non-zero exit as a reason not to trust the artifact.
@@ -80,14 +80,14 @@ been modified since. `gh attestation verify` exits non-zero on any mismatch
 ## Step 4 — Verify the SBOM attestation
 
 ```bash
-gh attestation verify cdc-error-handling-*.tar.gz \
-  --repo zircote/cdc-error-handling \
-  --signer-workflow zircote/cdc-error-handling/.github/workflows/release.yml \
+gh attestation verify cdc-error-plugin-*.tar.gz \
+  --repo zircote/cdc-error-plugin \
+  --signer-workflow zircote/cdc-error-plugin/.github/workflows/release.yml \
   --predicate-type https://cyclonedx.org/bom
 ```
 
 Proves the tarball is bound to the CycloneDX SBOM published alongside it
-(`cdc-error-handling-*-sbom.cdx.json`).
+(`cdc-error-plugin-*-sbom.cdx.json`).
 
 ## Step 5 — Verify the quality-gate verdicts
 
@@ -96,9 +96,9 @@ attested separately, bound to the same tarball digest:
 
 ```bash
 for pt in sast sca iac-license semgrep secrets manifest; do
-  gh attestation verify cdc-error-handling-*.tar.gz \
-    --repo zircote/cdc-error-handling \
-    --signer-workflow zircote/cdc-error-handling/.github/workflows/release.yml \
+  gh attestation verify cdc-error-plugin-*.tar.gz \
+    --repo zircote/cdc-error-plugin \
+    --signer-workflow zircote/cdc-error-plugin/.github/workflows/release.yml \
     --predicate-type "https://zircote.github.io/attestations/${pt}/v1"
 done
 ```
@@ -109,9 +109,9 @@ this exact tarball — read the predicate body (Step 8) for the verdict itself.
 ## Step 6 — Verify the OpenVEX disposition
 
 ```bash
-gh attestation verify cdc-error-handling-*.tar.gz \
-  --repo zircote/cdc-error-handling \
-  --signer-workflow zircote/cdc-error-handling/.github/workflows/release.yml \
+gh attestation verify cdc-error-plugin-*.tar.gz \
+  --repo zircote/cdc-error-plugin \
+  --signer-workflow zircote/cdc-error-plugin/.github/workflows/release.yml \
   --predicate-type https://openvex.dev/ns/v0.2.0
 ```
 
@@ -123,7 +123,7 @@ with cosign keyless rather than `gh attestation verify`:
 ```bash
 cosign verify-blob .claude-plugin/marketplace.json \
   --bundle marketplace.json.cosign.bundle \
-  --certificate-identity-regexp '^https://github\.com/zircote/cdc-error-handling/\.github/workflows/release\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/zircote/cdc-error-plugin/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
@@ -137,9 +137,9 @@ To see the actual details bound into any attestation (build provenance shown
 here; substitute any predicate type from the steps above):
 
 ```bash
-gh attestation verify cdc-error-handling-*.tar.gz \
-  --repo zircote/cdc-error-handling \
-  --signer-workflow zircote/cdc-error-handling/.github/workflows/release.yml \
+gh attestation verify cdc-error-plugin-*.tar.gz \
+  --repo zircote/cdc-error-plugin \
+  --signer-workflow zircote/cdc-error-plugin/.github/workflows/release.yml \
   --predicate-type https://slsa.dev/provenance/v1 \
   --format json | jq '.[0].verificationResult.statement.predicate'
 ```

@@ -1,6 +1,6 @@
 {
   "@context": "https://openvex.dev/ns/v0.2.0",
-  "@id": "https://zircote.github.io/vex/cdc-error-handling/v1",
+  "@id": "https://zircote.github.io/vex/cdc-error-plugin/v1",
   "author": "zircote",
   "role": "Project Maintainer",
   "timestamp": "2026-07-03T00:00:00Z",
@@ -9,7 +9,7 @@
     {
       "vulnerability": { "name": "CVE-0000-00000" },
       "products": [
-        { "@id": "pkg:generic/cdc-error-handling" }
+        { "@id": "pkg:generic/cdc-error-plugin" }
       ],
       "status": "not_affected",
       "justification": "vulnerable_code_not_in_execute_path",

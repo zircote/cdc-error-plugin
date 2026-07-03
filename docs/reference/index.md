@@ -63,7 +63,7 @@ independently:
 
 | Field | Value |
 |---|---|
-| `name` | `error-handling` |
+| `name` | `cdc-errors` |
 | `version` | `1.0.0` |
 | Manifest | [`.claude-plugin/marketplace.json`](../../.claude-plugin/marketplace.json) |
 
