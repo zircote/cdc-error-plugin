@@ -71,7 +71,7 @@ Also verify the published checksum, included as a release asset alongside the
 tarball:
 
 ```bash
-sha256sum -c cdc-error-handling-0.4.0-checksums.txt
+sha256sum -c cdc-error-handling-*-checksums.txt   # substitute the downloaded checksums file
 ```
 
 See [docs/how-to/verify-release.md](docs/how-to/verify-release.md) for a

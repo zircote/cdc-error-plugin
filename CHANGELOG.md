@@ -21,7 +21,7 @@ tracks the plugin.
 - CI (`.github/workflows/ci.yml`): pin-check
   (`zgosalvez/github-actions-ensure-sha-pinned-actions`, every action `uses:`
   pinned to a full 40-char commit SHA), actionlint
-  (`reviewdog/action-actionlint`), and `claude plugin validate .`.
+  (`reviewdog/action-actionlint`), and `claude plugin validate . --strict`.
 - Release pipeline (`.github/workflows/release.yml`): reproducible
   `git archive` tarball, SLSA build provenance via
   `actions/attest-build-provenance`, fail-closed `gh attestation verify`

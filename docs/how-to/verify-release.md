@@ -18,20 +18,25 @@ walks through re-verifying one from a clean workstation.
   gh auth status
   ```
 
+Substitute the actual release tag you're verifying for `TAG` below — the
+commands are written against a variable, not a hard-coded version, since a
+new tag ships each release.
+
 ## Step 1 — Download the release assets
 
 ```bash
-gh release download v0.4.0 --repo zircote/cdc-error-handling --dir ./dl
+TAG="v0.4.0"   # substitute the release tag you're verifying
+gh release download "$TAG" --repo zircote/cdc-error-handling --dir ./dl
 cd ./dl
 ls
-# cdc-error-handling-0.4.0.tar.gz
-# cdc-error-handling-0.4.0-checksums.txt
+# cdc-error-handling-<version>.tar.gz
+# cdc-error-handling-<version>-checksums.txt
 ```
 
 ## Step 2 — Verify the checksum
 
 ```bash
-sha256sum -c cdc-error-handling-0.4.0-checksums.txt
+sha256sum -c cdc-error-handling-*-checksums.txt
 ```
 
 This only proves the download wasn't corrupted or truncated — it says
@@ -40,7 +45,7 @@ nothing about who built it. That's what the attestation is for.
 ## Step 3 — Verify the provenance attestation
 
 ```bash
-gh attestation verify cdc-error-handling-0.4.0.tar.gz \
+gh attestation verify cdc-error-handling-*.tar.gz \
   --repo zircote/cdc-error-handling \
   --predicate-type https://slsa.dev/provenance/v1
 ```
@@ -64,7 +69,7 @@ To see the actual build details bound into the attestation (source commit,
 workflow run, builder identity):
 
 ```bash
-gh attestation verify cdc-error-handling-0.4.0.tar.gz \
+gh attestation verify cdc-error-handling-*.tar.gz \
   --repo zircote/cdc-error-handling \
   --predicate-type https://slsa.dev/provenance/v1 \
   --format json | jq '.[0].verificationResult.statement.predicate'
