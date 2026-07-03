@@ -5,44 +5,48 @@ title: Install the error-handling plugin
 
 # Install the error-handling plugin
 
-Three install paths, ordered from most to least common.
+This repository is itself a single-plugin marketplace: `.claude-plugin/marketplace.json`
+lists one plugin, `error-handling`, sourced from the same repo. Two install paths,
+ordered from most to least common.
 
-## From the marketplace
+## From GitHub (recommended)
 
 ```
-/plugin install zircote/error-handling
+/plugin marketplace add zircote/cdc-error-handling
+/plugin install error-handling@error-handling
 ```
 
-Verify both skills loaded:
+Verify all three skills loaded:
 
 ```
 /plugin list
 ```
 
-You should see `error-handling` with `cdc-err` and `cdc-review` underneath.
+You should see `error-handling` with `cdc-err`, `cdc-review`, and `cdc-handle` underneath.
 
 ## From a local checkout (development)
 
-Clone the repo, then point Claude Code at it via a project-level marketplace in `.claude/settings.json`:
+Clone the repo, then add it as a local marketplace:
+
+```
+/plugin marketplace add /absolute/path/to/cdc-error-handling
+/plugin install error-handling@error-handling
+```
+
+To make this automatic for a project (so teammates are prompted to install it),
+add it to `.claude/settings.json`:
 
 ```json
 {
-  "plugins": {
-    "marketplaces": [
-      { "path": "/absolute/path/to/error-handling" }
-    ]
+  "extraKnownMarketplaces": {
+    "error-handling": {
+      "source": {
+        "source": "github",
+        "repo": "zircote/cdc-error-handling"
+      }
+    }
   }
 }
-```
-
-Restart Claude Code. Skills auto-discover from `skills/`.
-
-## From a personal marketplace
-
-If you maintain your own marketplace pointing at this repo:
-
-```
-/plugin install error-handling
 ```
 
 ## Verify

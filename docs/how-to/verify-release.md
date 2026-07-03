@@ -1,0 +1,79 @@
+---
+diataxis_type: how-to
+title: Verify a release
+---
+
+# Verify a release
+
+Every tagged release publishes a `git archive` tarball carrying a
+[SLSA build-provenance](https://slsa.dev/provenance/v1) attestation. This
+walks through re-verifying one from a clean workstation.
+
+## Prerequisites
+
+- [GitHub CLI](https://cli.github.com/) `gh` ≥ 2.49.0, authenticated:
+
+  ```bash
+  gh auth login
+  gh auth status
+  ```
+
+## Step 1 — Download the release assets
+
+```bash
+gh release download v0.4.0 --repo zircote/cdc-error-handling --dir ./dl
+cd ./dl
+ls
+# cdc-error-handling-0.4.0.tar.gz
+# cdc-error-handling-0.4.0-checksums.txt
+```
+
+## Step 2 — Verify the checksum
+
+```bash
+sha256sum -c cdc-error-handling-0.4.0-checksums.txt
+```
+
+This only proves the download wasn't corrupted or truncated — it says
+nothing about who built it. That's what the attestation is for.
+
+## Step 3 — Verify the provenance attestation
+
+```bash
+gh attestation verify cdc-error-handling-0.4.0.tar.gz \
+  --repo zircote/cdc-error-handling \
+  --predicate-type https://slsa.dev/provenance/v1
+```
+
+A passing verification looks like:
+
+```
+Loaded digest sha256:... for file://cdc-error-handling-0.4.0.tar.gz
+Loaded 1 attestation from GitHub API
+✓ Verification succeeded!
+```
+
+This proves the tarball was built by `zircote/cdc-error-handling`'s own
+`release.yml` workflow, from the commit the release tag points at, and hasn't
+been modified since. `gh attestation verify` exits non-zero on any mismatch
+— treat a non-zero exit as a reason not to trust the artifact.
+
+## Step 4 (optional) — Inspect the provenance predicate
+
+To see the actual build details bound into the attestation (source commit,
+workflow run, builder identity):
+
+```bash
+gh attestation verify cdc-error-handling-0.4.0.tar.gz \
+  --repo zircote/cdc-error-handling \
+  --predicate-type https://slsa.dev/provenance/v1 \
+  --format json | jq '.[0].verificationResult.statement.predicate'
+```
+
+## What this does and doesn't prove
+
+- **Proves**: this exact file was produced by this repository's release
+  workflow from a specific commit, and hasn't been altered since.
+- **Doesn't prove**: the code is bug-free, or that the maintainer's account
+  or the GitHub Actions runner it built on wasn't itself compromised. See
+  [SECURITY.md](../../SECURITY.md) for the full threat-model caveat.
