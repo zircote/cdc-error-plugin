@@ -17,6 +17,8 @@ tracks the plugin.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-03
+
 ### Changed
 
 - Repository renamed `zircote/cdc-error-handling` -> `zircote/cdc-error-plugin`.
