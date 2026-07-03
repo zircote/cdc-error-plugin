@@ -1,3 +1,9 @@
+---
+id: error-handling-changelog
+type: episodic
+created: 2026-07-03T10:00:27-04:00
+---
+
 # Changelog
 
 All notable changes to this plugin are documented in this file.
@@ -24,11 +30,22 @@ tracks the plugin.
   (`reviewdog/action-actionlint`), and `claude plugin validate . --strict`.
 - Release pipeline (`.github/workflows/release.yml`): reproducible
   `git archive` tarball, SLSA build provenance via
-  `actions/attest-build-provenance`, fail-closed `gh attestation verify`
-  before publish, tag-gated GitHub Release with checksums.
-- `SECURITY.md` documenting the verification model and how to independently
-  verify a release's provenance attestation.
+  `actions/attest-build-provenance`, a CycloneDX SBOM (`anchore/sbom-action`
+  + `actions/attest-sbom`), six quality-gate verdicts each seam-attested as a
+  signed custom predicate bound to the tarball digest (SAST via CodeQL, SCA
+  via OSV-Scanner, IaC/license via Trivy, Semgrep, secrets via Gitleaks +
+  TruffleHog, manifest structural review), an OpenVEX disposition
+  attestation (`.vex/openvex.json`), and a cosign keyless signature over the
+  `marketplace.json` catalog. All attestations and the catalog signature are
+  fail-closed re-verified in the same run before the tag-gated publish step.
+  This repo has no separate central signer, so verification uniformly pins
+  `--repo` rather than a distinct `--signer-workflow`. ShellCheck is
+  deliberately not wired: this repo has no `.sh` scripts to scan.
+- `SECURITY.md` documenting the verification model, the full attestation
+  table, and how to independently verify every attestation and the catalog
+  signature.
 - `docs/how-to/verify-release.md`.
+- `.vex/openvex.json`: OpenVEX vulnerability-disposition document.
 
 ## [0.3.0] - 2026-05-21
 

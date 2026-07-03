@@ -1,0 +1,19 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://zircote.github.io/vex/cdc-error-handling/v1",
+  "author": "zircote",
+  "role": "Project Maintainer",
+  "timestamp": "2026-07-03T00:00:00Z",
+  "version": 1,
+  "statements": [
+    {
+      "vulnerability": { "name": "CVE-0000-00000" },
+      "products": [
+        { "@id": "pkg:generic/cdc-error-handling" }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "Sample disposition, replace with real entries. This plugin has no runtime dependency tree (it is a markdown/JSON skill bundle), so scanners (Semgrep, Gitleaks/TruffleHog, Trivy, OSV-Scanner) are expected to find little to nothing here. Disposition real findings here as they're triaged, so the release gate enforces \"no undispositioned high/critical findings\" rather than \"zero findings\"."
+    }
+  ]
+}

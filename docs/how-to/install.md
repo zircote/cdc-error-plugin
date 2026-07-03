@@ -1,4 +1,7 @@
 ---
+id: how-to-install-error-handling-plugin
+type: procedural
+created: 2026-05-21T10:47:00-04:00
 diataxis_type: how-to
 title: Install the error-handling plugin
 ---

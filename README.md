@@ -1,4 +1,7 @@
 ---
+id: error-handling-plugin-readme
+type: semantic
+created: 2026-05-20T09:08:01-04:00
 diataxis_type: explanation
 ---
 
@@ -117,9 +120,12 @@ fields — installing users track the plugin version; the catalog version
 tracks changes to the marketplace listing itself. Plugin changes are
 recorded in [CHANGELOG.md](CHANGELOG.md).
 
-Tagged releases (`vX.Y.Z`) build a reproducible source tarball, attest its
-SLSA build provenance, and fail-closed-verify that attestation before
-publishing — see [SECURITY.md](SECURITY.md) for the security model and
+Tagged releases (`vX.Y.Z`) build a reproducible source tarball and attest it
+with SLSA build provenance, a CycloneDX SBOM, six quality-gate verdicts
+(SAST, SCA, IaC/license, Semgrep, secrets, manifest review), and an OpenVEX
+disposition; the marketplace catalog itself is cosign-signed. Every
+attestation and the catalog signature are fail-closed re-verified before
+publishing — see [SECURITY.md](SECURITY.md) for the full security model and
 [docs/how-to/verify-release.md](docs/how-to/verify-release.md) for how to
 independently verify a downloaded release.
 
@@ -169,7 +175,9 @@ If you ask outside their scope, they say so and use general knowledge or point y
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                     # pin-check, actionlint, claude plugin validate
-│       └── release.yml                # tarball -> attest-build-provenance -> verify -> publish
+│       └── release.yml                # tarball -> provenance + SBOM + 6 gates + VEX + cosign -> verify -> publish
+├── .vex/
+│   └── openvex.json                   # vulnerability disposition, attested each release
 ├── skills/
 │   ├── cdc-err/
 │   │   ├── SKILL.md
