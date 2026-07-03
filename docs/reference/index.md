@@ -1,4 +1,7 @@
 ---
+id: reference-index
+type: semantic
+created: 2026-05-21T10:47:00-04:00
 diataxis_type: reference
 title: Reference index
 ---
@@ -51,9 +54,18 @@ Information-oriented material. Each section points to the canonical file inside 
 | Field | Value |
 |---|---|
 | `name` | `error-handling` |
-| `version` | `0.2.0` |
+| `version` | `0.4.0` |
 | `license` | MIT |
 | Manifest | [`.claude-plugin/plugin.json`](../../.claude-plugin/plugin.json) |
+
+This repository also carries its own marketplace catalog, versioned
+independently:
+
+| Field | Value |
+|---|---|
+| `name` | `error-handling` |
+| `version` | `1.0.0` |
+| Manifest | [`.claude-plugin/marketplace.json`](../../.claude-plugin/marketplace.json) |
 
 ## Trigger phrases
 

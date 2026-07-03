@@ -1,4 +1,7 @@
 ---
+id: explanation-why-three-sibling-skills
+type: semantic
+created: 2026-05-21T10:47:00-04:00
 diataxis_type: explanation
 title: Why three sibling skills, not one
 ---

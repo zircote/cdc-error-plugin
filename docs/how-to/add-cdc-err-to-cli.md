@@ -1,4 +1,7 @@
 ---
+id: how-to-add-cdc-err-to-cli
+type: procedural
+created: 2026-05-21T10:47:00-04:00
 diataxis_type: how-to
 title: Add cdc-err dual-format output to an existing CLI
 ---

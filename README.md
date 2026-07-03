@@ -89,7 +89,7 @@ Organized per [Diátaxis](https://diataxis.fr/) under [`docs/`](docs/):
 - **Tutorial** — [Get started with the plugin](docs/tutorials/getting-started.md)
 - **How-to** — [Install](docs/how-to/install.md) · [Add cdc-err to a CLI](docs/how-to/add-cdc-err-to-cli.md) · [Run evals](docs/how-to/run-evals.md) · [Verify a release](docs/how-to/verify-release.md)
 - **Reference** — [Index](docs/reference/index.md) (envelope, severity, language refs)
-- **Explanation** — [Dual-consumer problem](docs/explanation/dual-consumer.md) · [Why two sibling skills](docs/explanation/skill-cooperation.md)
+- **Explanation** — [Dual-consumer problem](docs/explanation/dual-consumer.md) · [Why three sibling skills](docs/explanation/skill-cooperation.md)
 
 ## Installation
 
@@ -131,7 +131,7 @@ independently verify a downloaded release.
 
 ## When the skills won't trigger (and shouldn't)
 
-Both skills decline cleanly outside their scope:
+All three skills decline cleanly outside their scope:
 
 `cdc-err` declines on:
 - REST/HTTP API errors consumed by a browser frontend (use RFC 9457 directly; the "dual consumer" framing is CLI-specific).

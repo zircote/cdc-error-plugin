@@ -1,4 +1,7 @@
 ---
+id: explanation-dual-consumer-problem
+type: semantic
+created: 2026-05-21T10:47:00-04:00
 diataxis_type: explanation
 title: Why CLI errors are a dual-consumer problem
 ---
@@ -41,7 +44,7 @@ The solution isn't to pick one. It's to ship both, and let the consumer choose.
 - frontend exception display,
 - internal telemetry shape.
 
-For source-code error propagation behind the CLI — swallowed exceptions, `unwrap()` in library code, lost cause chains — see [why the plugin ships two sibling skills](skill-cooperation.md).
+For source-code error propagation behind the CLI — swallowed exceptions, `unwrap()` in library code, lost cause chains — see [why the plugin ships three sibling skills](skill-cooperation.md).
 
 ## Source
 

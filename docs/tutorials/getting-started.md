@@ -1,4 +1,7 @@
 ---
+id: tutorial-getting-started-error-handling
+type: procedural
+created: 2026-05-21T10:47:00-04:00
 diataxis_type: tutorial
 title: Get started with the error-handling plugin
 ---
@@ -19,10 +22,11 @@ You need: Claude Code installed, a terminal, and ~10 minutes.
 In Claude Code:
 
 ```
-/plugin install zircote/error-handling
+/plugin marketplace add zircote/cdc-error-handling
+/plugin install error-handling@error-handling
 ```
 
-When the picker shows `cdc-err` and `cdc-review` under `Available skills`, the plugin is loaded.
+When the picker shows `cdc-err`, `cdc-review`, and `cdc-handle` under `Available skills`, the plugin is loaded.
 
 ## 2. Create the example code
 
