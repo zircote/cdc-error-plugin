@@ -175,3 +175,7 @@ narrative walkthrough.
   `run:` blocks). Wiring a gate with nothing to scan would produce a
   permanently-empty attestation, which asserts nothing and would be
   misleading.
+
+For the reasoning behind this pipeline's scope and design (why these gates,
+why no central signer, what it does and doesn't close), see
+[docs/explanation/attested-releases.md](docs/explanation/attested-releases.md).

@@ -17,6 +17,29 @@ tracks the plugin.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/explanation/attested-releases.md`: why the release pipeline has the
+  scope and shape it does (six gates + SBOM + VEX + cosign for a repo with
+  no dependency tree, no central signer).
+- MIF Level 1 frontmatter on the 6 docs that lacked it
+  (`getting-started.md`, `add-cdc-err-to-cli.md`, `run-evals.md`,
+  `dual-consumer.md`, `skill-cooperation.md`, `reference/index.md`). All 11
+  docs in the repo now pass `mif-validate --level 1`.
+
+### Fixed
+
+- `getting-started.md`: stale `/plugin install zircote/error-handling`
+  install command; stale claim that the skill picker shows only two
+  skills.
+- `dual-consumer.md`, `README.md`: stale "two sibling skills" link text
+  and "Both skills decline..." heading, both predating the `cdc-handle`
+  skill added in 0.3.0.
+- `reference/index.md`: plugin manifest table still showed version
+  `0.2.0`; added the marketplace.json manifest, previously undocumented.
+- `run-evals.md`: `cdc-handle` was missing from the eval-inspection
+  commands, `/autoresearch` invocations, and quality-ratio table.
+
 ## [0.4.0] - 2026-07-03
 
 ### Added

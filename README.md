@@ -89,7 +89,7 @@ Organized per [Diátaxis](https://diataxis.fr/) under [`docs/`](docs/):
 - **Tutorial** — [Get started with the plugin](docs/tutorials/getting-started.md)
 - **How-to** — [Install](docs/how-to/install.md) · [Add cdc-err to a CLI](docs/how-to/add-cdc-err-to-cli.md) · [Run evals](docs/how-to/run-evals.md) · [Verify a release](docs/how-to/verify-release.md)
 - **Reference** — [Index](docs/reference/index.md) (envelope, severity, language refs)
-- **Explanation** — [Dual-consumer problem](docs/explanation/dual-consumer.md) · [Why three sibling skills](docs/explanation/skill-cooperation.md)
+- **Explanation** — [Dual-consumer problem](docs/explanation/dual-consumer.md) · [Why three sibling skills](docs/explanation/skill-cooperation.md) · [Why an attested release pipeline](docs/explanation/attested-releases.md)
 
 ## Installation
 

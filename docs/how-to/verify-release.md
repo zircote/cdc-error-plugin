@@ -151,3 +151,6 @@ gh attestation verify cdc-error-handling-*.tar.gz \
 - **Doesn't prove**: the code is bug-free, or that the maintainer's account
   or the GitHub Actions runner it built on wasn't itself compromised. See
   [SECURITY.md](../../SECURITY.md) for the full threat-model caveat.
+
+For why this pipeline exists and looks the way it does, see
+[Why this plugin ships an attested release pipeline](../explanation/attested-releases.md).
