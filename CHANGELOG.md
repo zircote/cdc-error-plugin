@@ -18,8 +18,10 @@ tracks the plugin.
 - `.claude-plugin/marketplace.json`: this repository now doubles as a
   single-plugin marketplace, referencing the plugin via a local `./` source.
 - `homepage` and `repository` fields on the plugin manifest.
-- CI (`.github/workflows/ci.yml`): pin-check (every action `uses:` pinned to a
-  full 40-char commit SHA), actionlint, and `claude plugin validate .`.
+- CI (`.github/workflows/ci.yml`): pin-check
+  (`zgosalvez/github-actions-ensure-sha-pinned-actions`, every action `uses:`
+  pinned to a full 40-char commit SHA), actionlint
+  (`reviewdog/action-actionlint`), and `claude plugin validate .`.
 - Release pipeline (`.github/workflows/release.yml`): reproducible
   `git archive` tarball, SLSA build provenance via
   `actions/attest-build-provenance`, fail-closed `gh attestation verify`

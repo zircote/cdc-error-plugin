@@ -53,8 +53,6 @@ jobs:
       contents: read
       id-token: write
       attestations: write
-    outputs:
-      artifact-name: ${{ steps.subject.outputs.name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -68,12 +66,6 @@ jobs:
           git archive --format=tar.gz --prefix="${NAME}-${VERSION}/" \
             -o "dist/${NAME}-${VERSION}.tar.gz" "${GITHUB_SHA}"
           sha256sum dist/*
-      - name: Record artifact name
-        id: subject
-        env:
-          NAME: ${{ needs.meta.outputs.name }}
-          VERSION: ${{ needs.meta.outputs.version }}
-        run: echo "name=${NAME}-${VERSION}.tar.gz" >> "$GITHUB_OUTPUT"
       - name: Attest build provenance
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
@@ -109,7 +101,7 @@ jobs:
 
   publish:
     name: Publish Release
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: [meta, verify]
     runs-on: ubuntu-latest
     permissions:
