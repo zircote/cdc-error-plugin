@@ -1,7 +1,7 @@
 {
   "name": "cdc-errors",
   "description": "Single-plugin marketplace for error-handling: RFC 9457 dual-consumer CLI error envelopes, source-code error-handling review, and LLM-agent consumer-side interpretation of those envelopes.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "owner": {
     "name": "zircote",
     "email": "zircote@zircote.com"
@@ -9,7 +9,12 @@
   "plugins": [
     {
       "name": "error-handling",
-      "source": "./",
+      "source": {
+        "source": "github",
+        "repo": "zircote/cdc-error-plugin",
+        "ref": "v0.4.1",
+        "sha": "67f3e6eceb40da20c791f50a1d7b28075925945d"
+      },
       "description": "Three sibling skills covering the full CLI/code error-handling lifecycle: cdc-err (RFC 9457 dual-consumer envelopes for CLI output), cdc-review (source-code error-handling review across any language), and cdc-handle (LLM-agent consumer-side interpretation and action on cdc-err envelopes in tool_result payloads).",
       "author": {
         "name": "zircote",
