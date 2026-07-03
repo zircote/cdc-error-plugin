@@ -783,3 +783,81 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" dist/* \
             --repo "${GITHUB_REPOSITORY}" --title "Release ${VERSION}" \
             --generate-notes "${PRERELEASE[@]}"
+
+  # --- pin the catalog to this release's exact commit ---------------------
+  #
+  # This plugin resides INSIDE its own marketplace (marketplace.json's plugin
+  # entry points at this same repo). Every release must re-pin that entry to
+  # the released commit's SHA (not leave it tracking a live "./" / branch
+  # reference) so the catalog always resolves to an exact, attested commit --
+  # the same discipline external SHA-pinned catalog entries get, applied to
+  # a self-hosted one. The catalog's own version bumps (patch) to reflect
+  # the changed listing, per release.
+  #
+  # This pushes directly to protected `main`. The default GITHUB_TOKEN is not
+  # an admin-bypass actor for required status checks (only an authenticated
+  # human admin's push is, as established earlier this session) -- so this
+  # uses a dedicated fine-grained PAT (CATALOG_PIN_TOKEN, Contents:
+  # read/write, scoped to only this repo) that authenticates as the repo
+  # owner and bypasses the same way a manual admin push does. Never widen
+  # this token's scope beyond this one repo.
+  pin-catalog:
+    name: Pin catalog to release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [meta, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main (PAT, for the protected-branch push)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+          token: ${{ secrets.CATALOG_PIN_TOKEN }}
+      - name: Pin plugin source + bump catalog patch version
+        env:
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+          PLUGIN_NAME: error-handling
+        run: |
+          set -euo pipefail
+          FILE=.claude-plugin/marketplace.json
+          CURRENT_SHA=$(jq -r --arg name "${PLUGIN_NAME}" \
+            '.plugins[] | select(.name == $name) | .source.sha // ""' "${FILE}")
+          if [ "${CURRENT_SHA}" = "${RELEASE_SHA}" ]; then
+            echo "Catalog already pinned to ${RELEASE_SHA}; nothing to do."
+            exit 0
+          fi
+          CURRENT_VERSION=$(jq -r '.version' "${FILE}")
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${CURRENT_VERSION}"
+          NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          jq --arg repo "${REPO}" --arg ref "${TAG}" --arg sha "${RELEASE_SHA}" \
+             --arg newver "${NEW_VERSION}" --arg name "${PLUGIN_NAME}" \
+            '.version = $newver
+             | .plugins = [.plugins[] | if .name == $name
+                 then .source = {"source": "github", "repo": $repo, "ref": $ref, "sha": $sha}
+                 else . end]' \
+            "${FILE}" > "${FILE}.tmp"
+          mv "${FILE}.tmp" "${FILE}"
+          jq -e . "${FILE}" > /dev/null
+          echo "Pinned ${PLUGIN_NAME} to ${TAG} (${RELEASE_SHA}); catalog ${CURRENT_VERSION} -> ${NEW_VERSION}"
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+        id: pin
+      - name: Commit + push
+        env:
+          TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+          NEW_VERSION: ${{ steps.pin.outputs.new_version }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NEW_VERSION}" ]; then
+            exit 0
+          fi
+          git config user.name "cdc-error-plugin-catalog-bot"
+          git config user.email "catalog-bot@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          SUBJECT="chore(catalog): pin error-handling to ${TAG} (${RELEASE_SHA:0:7})"
+          BODY="Automated post-release catalog pin. Marketplace version bumped to ${NEW_VERSION}."
+          git commit -m "${SUBJECT}" -m "${BODY}"
+          git push origin HEAD:main

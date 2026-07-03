@@ -17,6 +17,23 @@ tracks the plugin.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/adr/`: Architectural Decision Records (Structured MADR format) for
+  every architecturally significant decision made this session — single-repo
+  plugin-and-marketplace architecture, full-tier release attestation scope,
+  self-signed attestations (no central signer), default `GITHUB_TOKEN` for
+  release publishing, self-referential catalog SHA-pinning via a
+  PAT-authenticated post-release job, and the GitHub Flow branch model.
+- `.github/workflows/release.yml`: a `pin-catalog` job, gated to real tag
+  pushes, that re-pins `marketplace.json`'s `error-handling` entry to the
+  just-released commit's SHA and bumps the catalog's patch version,
+  authenticated via a dedicated fine-grained PAT (`CATALOG_PIN_TOKEN`) since
+  the default token can't bypass `main`'s branch protection the way an
+  authenticated admin push can.
+- `docs/how-to/catalog-pinning.md`: runbook for the automated catalog-pin
+  flow and its manual fallback.
+
 ## [0.4.1] - 2026-07-03
 
 ### Changed

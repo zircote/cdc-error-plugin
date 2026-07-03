@@ -26,6 +26,7 @@ You already know what you want to do; these are the steps.
 - [Add cdc-err dual-format output to an existing CLI](how-to/add-cdc-err-to-cli.md)
 - [Run and improve the skill evals](how-to/run-evals.md)
 - [Verify a release](how-to/verify-release.md)
+- [How the marketplace catalog gets pinned to a release](how-to/catalog-pinning.md)
 
 ## Reference — information-oriented lookup
 
@@ -40,6 +41,13 @@ Background, rationale, and design decisions.
 - [Why CLI errors are a dual-consumer problem](explanation/dual-consumer.md) — the framing `cdc-err` is built on.
 - [Why three sibling skills, not one](explanation/skill-cooperation.md) — why the plugin splits producer / propagation / consumer across `cdc-err`, `cdc-review`, and `cdc-handle`.
 - [Why this plugin ships an attested release pipeline](explanation/attested-releases.md) — why fail-closed release verification is worth building, and why it's scoped the way it is.
+
+## Architectural Decision Records
+
+Not a Diátaxis quadrant — a separate genre for the architecturally
+significant, hard-to-reverse decisions behind this repo's structure.
+
+- [ADR index](adr/README.md) — why the repo is both a plugin and its own marketplace, the release pipeline's attestation scope, the signer topology, release auth, catalog SHA-pinning, and the branch model.
 
 ## Root-level documents
 
