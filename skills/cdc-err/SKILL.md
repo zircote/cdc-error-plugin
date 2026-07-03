@@ -121,12 +121,13 @@ The post claims ~75% per-tool_result reduction by replacing prose tracebacks wit
 
 ## Out of Scope for This Skill
 
-The post is silent on the following. Do not invent guidance:
+The post explicitly names one caveat and is silent on the rest. Do not invent guidance beyond what's stated:
 
-- Specific HTTP status-code → exit-code tables beyond the `status: 429 → exit_code: 2` example shown.
-- Localization of `title` / `detail` strings.
-- Telemetry or logging of emitted errors.
-- Schema enforcement of extension members beyond their names and intent.
+- **Streaming or multi-error aggregation** — the post says plainly: "RFC 9457 does not cover streaming or multi-error aggregation as elegantly as SARIF does." For a CLI invocation that produces many distinct errors (a linter run, a batch validator), the post's own suggestion is an `errors[]` extension member holding per-error Problem Details objects, or JSON Lines with one Problem Details object per line — not a single envelope. If a caller's use case is fundamentally multi-error, point them at SARIF or one of those two patterns rather than forcing a single-envelope response.
+- Specific HTTP status-code → exit-code tables beyond the `status: 429 → exit_code: 2` example shown. (The post is silent here.)
+- Localization of `title` / `detail` strings. (The post is silent here.)
+- Telemetry or logging of emitted errors. (The post is silent here.)
+- Schema enforcement of extension members beyond their names and intent. (The post is silent here.)
 - How to migrate an existing tool's error taxonomy to stable `type` URIs (the post requires a versioning policy but does not prescribe one).
 
 If a caller asks about any of the above, say so explicitly rather than guessing.

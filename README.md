@@ -155,11 +155,12 @@ If you ask outside their scope, they say so and use general knowledge or point y
 
 ## What's out of scope (honestly marked)
 
-`cdc-err` is faithful to its source post; where the post is silent, the skill says so:
+`cdc-err` is faithful to its source post; where the post is explicit or silent, the skill says so:
 
-- **Complete HTTP-status → exit-code table.** The post commits to `429 → 2`; the rest is the CLI author's call.
-- **Localization** of `title` / `detail` strings.
-- **Telemetry/logging** of emitted errors.
+- **Streaming or multi-error aggregation.** The post states this directly: "RFC 9457 does not cover streaming or multi-error aggregation as elegantly as SARIF does." For a CLI run that produces many distinct errors, its own suggestion is an `errors[]` extension member of per-error Problem Details objects, or JSON Lines (one Problem Details object per line) — not a single envelope.
+- **Complete HTTP-status → exit-code table.** The post commits to `429 → 2`; the rest is the CLI author's call. (The post is silent beyond this example.)
+- **Localization** of `title` / `detail` strings. (The post is silent here.)
+- **Telemetry/logging** of emitted errors. (The post is silent here.)
 - **Idiomatic libraries for Node/Ruby/Java/C#/shell.** The pattern applies; specific library choices are yours.
 - **Migration path from existing error taxonomies** to stable `type` URIs.
 
@@ -254,7 +255,7 @@ commit SHA).
 ## Sources and authority
 
 - **`cdc-err`** traces all prescriptions to https://zircote.com/blog/2026/04/cli-error-messages-are-a-dual-consumer-problem/. The post is the only authority; anything outside it is marked **out of scope** rather than invented. Upstream sources cited in the post: RFC 9457, RFC 7231 §7.1.3, SARIF 2.1.0, LSP 3.17, Anthropic tool-use docs, miette, rustc diagnostic guide.
-- **`cdc-review`** draws on multiple sources: Rust API guidelines (`C-GOOD-ERR`, `C-PANIC-FREE`), Go `errors` package guidance + 2019 error-values design, PEP 3134 (Python exception chaining), *Effective Java* items 69-77, ES2022 `Error.cause`. Each principle is cited in the relevant language reference rather than at a single canonical URL.
+- **`cdc-review`** draws on multiple sources: the Rust API guidelines (`C-GOOD-ERR`) plus community convention against panicking in library code (not itself a numbered guideline), Go `errors` package guidance + 2019 error-values design, PEP 3134 (Python exception chaining), *Effective Java* items 69-77, ES2022 `Error.cause`. Each principle is cited in the relevant language reference rather than at a single canonical URL.
 - **`cdc-handle`** consumes the same contract `cdc-err` produces. Authority chain: cdc-err's `references/envelope.md` is the schema; RFC 9457 § 3 (Problem Details for HTTP APIs) is the upstream standard; rustc's diagnostic guide is the source of the applicability markers (`machine_applicable` / `maybe_incorrect` / `has_placeholders` / `unspecified`); LSP's `CodeAction` interface is the shape used for `code_actions[]` entries.
 
 ## License

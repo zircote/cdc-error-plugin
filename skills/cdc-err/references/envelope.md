@@ -47,6 +47,15 @@ Without these markers, agents will apply plausible-looking but wrong fixes. The 
 | `libraries_missing` | string[] | Names of system libraries the failure references (e.g. `["ssl"]`).   |
 | `docs_url`          | URI      | Stable URL to long-form documentation for this problem type.         |
 
+## Streaming / Multi-Error Output (Out of Scope)
+
+The post says plainly: "RFC 9457 does not cover streaming or multi-error aggregation as elegantly as SARIF does." A single Problem Details envelope models one error occurrence. For a CLI invocation that produces many distinct errors (a linter run, a batch validator), the post's own suggestion is one of:
+
+- An `errors[]` extension member holding an array of per-error Problem Details objects, or
+- JSON Lines: one Problem Details object per line, streamed as errors occur.
+
+Either is a deliberate departure from a single envelope, not a variant of it. If the actual need is multi-error output, point the caller at SARIF or one of these two patterns rather than stretching the single-envelope shape to fit.
+
 ## Exit Code / Status Mapping
 
 The post gives one explicit mapping (`status: 429 → exit_code: 2` for rate limits) but does **not** prescribe a complete table. Out of scope: defining your own table is the CLI author's responsibility. The envelope must carry both `status` and `exit_code` so each consumer reads the field native to it.

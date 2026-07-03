@@ -16,10 +16,10 @@ It does **not** dictate the output shape of CLI errors at the binary boundary â€
 
 This skill draws on established error-handling principles from multiple sources rather than a single canonical post:
 
-- **Rust:** the Rust API guidelines (C-GOOD-ERR, C-PANIC-FREE), `thiserror`/`anyhow` conventions.
+- **Rust:** the Rust API guidelines (`C-GOOD-ERR`), plus the wider Rust community convention against panicking/aborting in library code â€” the latter is not a numbered guideline in the API guidelines checklist, and this skill doesn't claim it is.
 - **Go:** `errors` package guidance, the 2019 error-values proposal, `errors.Is` / `errors.As` / `%w` semantics.
 - **Python:** PEP 3134 (exception chaining), the `contextlib` docs, the cpython `Exception` hierarchy.
-- **JVM:** Effective Java item 73-77 on exception design.
+- **JVM:** Effective Java items 69-77 on exception design.
 - **CLI output:** delegated to `cdc-err`.
 
 Where principles are contested or language-specific, the relevant `references/languages/<lang>.md` file cites the source per-principle rather than claiming universal authority.

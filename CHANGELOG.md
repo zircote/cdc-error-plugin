@@ -39,6 +39,20 @@ tracks the plugin.
   `0.2.0`; added the marketplace.json manifest, previously undocumented.
 - `run-evals.md`: `cdc-handle` was missing from the eval-inspection
   commands, `/autoresearch` invocations, and quality-ratio table.
+- `skills/cdc-err/SKILL.md`, `skills/cdc-err/references/envelope.md`,
+  `README.md`: the source post was silent, not exclusion-free, on
+  streaming/multi-error output ("RFC 9457 does not cover streaming or
+  multi-error aggregation as elegantly as SARIF does") — added that
+  caveat and the post's own `errors[]`/JSON-Lines suggestion for that
+  case, verified by re-fetching the source post directly.
+- `skills/cdc-review/SKILL.md`, `README.md`: removed a fabricated
+  citation, `C-PANIC-FREE` — no such item exists in the Rust API
+  guidelines (verified against the guidelines' own checklist page); the
+  underlying advice against panicking in library code is real Rust
+  community convention, just not a numbered guideline. Also fixed
+  `SKILL.md`'s Effective Java citation from "item 73-77" to "items
+  69-77" (verified against the book's actual Exceptions chapter table of
+  contents), matching what `README.md`/`java.md` already said correctly.
 
 ## [0.4.0] - 2026-07-03
 
